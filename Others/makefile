@@ -1,6 +1,6 @@
 boot.bat: boot.asm
 	nasm -o boot.bat boot.asm
-cp: ckernel_u.asm
+boot.asm: ckernel_u.asm rm
 	cp ../kernel/kernel.asm .
 	cp ../boot/boot.asm .
 	cp ../include/pm.inc .
