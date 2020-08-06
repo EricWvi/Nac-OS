@@ -23,7 +23,6 @@
 #include "window.h"
 #include "timer.h"
 #include "global_define.h"
-#include "test.h"
 
 
 struct MEMMAN* memman = (struct MEMMAN*)0x100000;
@@ -215,7 +214,6 @@ void CMain(void) {
     }
     */
 
-   showFont8(vram,xsize,20,100,COL8_FFFFFF,systemFont + *test() * 16);
    /*
    char fontA[2] = "Y";
     char fontB[2] = "N";
@@ -286,7 +284,7 @@ void CMain(void) {
 
            }
        }
-    } 
+    }
 }
 
 void init_screen8(char* vram, int xsize, int ysize) {
