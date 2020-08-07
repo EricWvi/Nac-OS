@@ -53,7 +53,7 @@ void timer_settime(struct TIMER *timer, unsigned int timeout) {
 
 
 void intHandlerForTimer(char *esp) {
-    io_out8(PIC0_OCW2, 0x60);
+    io_out8(PIC0_OCW2, 0x60); //处理完本次中断后可以响应下次中断
     timerctl.count++;
 
     int i;

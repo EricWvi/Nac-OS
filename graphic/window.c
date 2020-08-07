@@ -1,6 +1,8 @@
 #include "mem_manage.h"
 #include "window.h"
 
+//初始化窗口控制器
+//参数：内存地址，显存地址，屏幕尺寸
 struct SHTCTL *shtctl_init(struct MEMMAN *memman, unsigned char *vram,
   int xsize, int ysize) {
     struct SHTCTL *ctl;
@@ -27,6 +29,7 @@ struct SHTCTL *shtctl_init(struct MEMMAN *memman, unsigned char *vram,
 }
 
 #define SHEET_USE  1
+//窗口分配
 struct SHEET *sheet_alloc(struct SHTCTL *ctl) {
     struct SHEET *sht;
     int i;

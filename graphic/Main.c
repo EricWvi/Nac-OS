@@ -27,7 +27,7 @@
 
 struct MEMMAN* memman = (struct MEMMAN*)0x100000;
 
-char get_font_data(int c, int offset);
+char get_font_data(int c, int offset); //汇编函数接口
 
 
 void io_hlt(void);
@@ -136,7 +136,7 @@ void CMain(void) {
 
     struct TIMER *timer, *timer2, *timer3;
 
-    init_pit();
+    init_pit();                             //初始化时钟中断
     fifo8_init(&timerinfo, 8, timerbuf);
     timer = timer_alloc();
     timer_init(timer, &timerinfo, 10);
@@ -162,7 +162,7 @@ void CMain(void) {
  
     struct AddrRangeDesc* memDesc = (struct AddrRangeDesc*)get_adr_buffer();
     memman_init(memman);
-    int wytemp = memman_free(memman, 0x001008000, 0x3FEE8000);
+    memman_free(memman, 0x001008011, 0x3FEE8000);
     
 
     shtctl = shtctl_init(memman, vram, xsize, ysize);
@@ -214,18 +214,7 @@ void CMain(void) {
     }
     */
 
-   /*
-   char fontA[2] = "Y";
-    char fontB[2] = "N";
-    if(wytemp == -1)
-    {
-        showFont8(vram,xsize,20,100,COL8_FFFFFF,systemFont + *fontA * 16);
-    }
-    else
-    {
-        showFont8(vram,xsize,20,100,COL8_FFFFFF,systemFont + *fontB * 16);
-    }
-    */
+   
     for(;;) {
 
        io_cli();
@@ -625,10 +614,10 @@ int mouse_decode(struct MOUSE_DEC *mdec, unsigned char dat) {
 }
 
 void  showMemoryInfo(struct SHTCTL *shtctl, struct SHEET *sht,struct AddrRangeDesc* desc, char* vram, int page,int xsize, int color) {
-    int x = 0, y = 0, gap = 13*8,  strLen = 10* 8;
+    int x = 0, y = 100, gap = 13*8,  strLen = 10* 8;
 
-    init_screen8(sht->buf, xsize, ysize);
-
+    init_screen8(sht->buf,xsize,sht->bysize);
+    sheet_refresh(shtctl,sht,);
     showString(shtctl, sht, x, y, color, "page is: ");
     char* pPageCnt = intToHexStr(page);
     showString(shtctl, sht, gap, y, color, pPageCnt);
@@ -657,6 +646,7 @@ void  showMemoryInfo(struct SHTCTL *shtctl, struct SHEET *sht,struct AddrRangeDe
     showString(shtctl, sht, x, y, color, "type: ");
     char* pType = intToHexStr(desc->type);
     showString(shtctl, sht, gap, y, color, pType);
+
 }
 
 struct SHEET*  message_box(struct SHTCTL *shtctl,  char *title) {

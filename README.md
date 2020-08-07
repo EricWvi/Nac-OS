@@ -4,7 +4,18 @@
 #### Main.c
 * mx my 鼠标坐标
 
+* void showString(struct SHTCTL *shtctl ,struct SHEET *sht, int x, int y, char color, unsigned char *s )
+* 
 
+#### window.c
+
+* struct SHTCTL *shtctl_init(struct MEMMAN *memman, unsigned char *vram,
+    int xsize, int ysize)
+  * 窗口控制器初始化
+  * memman 内存地址
+  * vram 显存地址
+  * xsize ysize 屏幕尺寸
+* 
 
 
 
