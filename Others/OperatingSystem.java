@@ -12,11 +12,12 @@ public class OperatingSystem {
    
     private Floppy floppyDisk = new Floppy();
     private int  MAX_SECTOR_NUM = 18;
-    
+  
     
     private void writeFileToFloppy(String fileName, boolean bootable, int cylinder,int beginSec) {
     	File file = new File(fileName);
     	InputStream in = null;
+  
     	
     	try {
     		in = new FileInputStream(file);
@@ -54,8 +55,83 @@ public class OperatingSystem {
     public void makeFllopy()   {
     	writeFileToFloppy("kernel.bat", false, 1, 1);
     	
+    	//test file system
+    	//此处容易出错，一旦内核大小超过7柱面1扇区后，下面的代码将会产生问题
+    	//change here
+    	DiskFileSystem fileSys = new DiskFileSystem(floppyDisk, 7, 1);
+    	FileHeader header = new FileHeader();
+    	header.setFileName("abc");
+    	header.setFileExt("exe");
+    	byte[] date = new byte[2];
+    	date[0] = 0x11;
+    	date[1] = 0x12;
+    	header.setFileTime(date);
+    	header.setFileDate(date);
+   	
+    	byte[] bbuf = new byte[4600];
+    	File file = new File("hlt.bat");
+    	InputStream in = null;
+    	try {
+    		in = new FileInputStream(file);
+    		long len = file.length();
+    		header.setFileSize((int)len);
+    		
+    		int count = 0;
+    		while (count < file.length()) {
+    			bbuf[count] = (byte) in.read();
+    			count++;
+    		}
+    		
+    		in.close();
+    	}catch(IOException e) {
+    		e.printStackTrace();
+    		return;
+    	}
+    	
+    	header.setFileContent(bbuf);
+    	fileSys.addHeader(header);
+    	    	
+    	//change here
+    	header = new FileHeader();
+    	header.setFileName("crack");
+    	header.setFileExt("exe");
+    	file = new File("crack.bat");
+    	in = null;
+    	try {
+    		in = new FileInputStream(file);
+    		long len = file.length();
+    		header.setFileSize((int)len);
+    		
+    		int count = 0;
+    		while (count < file.length()) {
+    			bbuf[count] = (byte) in.read();
+    			count++;
+    		}
+    		
+    		in.close();
+    	}catch(IOException e) {
+    		e.printStackTrace();
+    		return;
+    	}
+    	header.setFileContent(bbuf);
+    	fileSys.addHeader(header);
+    	
+    	header = new FileHeader();
+    	header.setFileName("ijk");
+    	header.setFileExt("txt");
+    	String content = "this is a text file with name ijk.txt";
+    	header.setFileContent(content.getBytes());
+    	fileSys.addHeader(header);
+
+    	
+    	fileSys.flashFileHeaders();
+    	
+    	//test file system
+    	
     	floppyDisk.makeFloppy("nac.img");
     }
+    
+  
     
    
 
@@ -63,6 +139,15 @@ public class OperatingSystem {
     	CKernelAsmPrecessor kernelPrecessor = new CKernelAsmPrecessor();
     	kernelPrecessor.process();
     	kernelPrecessor.createKernelBinary();
+    	
+    	CKernelAsmPrecessor appPrecessor = new CKernelAsmPrecessor("hlt.bat", "app_u.asm", "app.asm", "api_call.asm");
+    	appPrecessor.process();
+    	appPrecessor.createKernelBinary();
+    	
+    	CKernelAsmPrecessor crackPrecessor = new CKernelAsmPrecessor("crack.bat", "crack_u.asm", "crack.asm", "crack_call.asm");
+    	crackPrecessor.process();
+    	crackPrecessor.createKernelBinary();
+    	
     	
     	OperatingSystem op = new OperatingSystem("boot.bat");
     	op.makeFllopy();

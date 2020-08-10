@@ -15,13 +15,31 @@ public class CKernelAsmPrecessor {
     private BufferedReader fileReader = null;
     StringBuffer fileBuffer = null;
     
+    private String outputFile = "kernel.bat";
+    private String assemblyFileBeforeProcess = "ckernel_u.asm";
+    private String assemblyFileAfterProcess = "ckernel.asm";
+    private String originalAssemblyFile = "kernel.asm";
+    
     public CKernelAsmPrecessor() {
+    	init();
+    }
+    
+    public CKernelAsmPrecessor(String output, String assemblyBefore, String assemblyAfter, 
+    		String assemblyOriginal) {
+    	this.outputFile = output;
+    	this.assemblyFileBeforeProcess = assemblyBefore;
+    	this.assemblyFileAfterProcess = assemblyAfter;
+    	this.originalAssemblyFile = assemblyOriginal;
+    	init();
+    }
+    
+    private void init() {
     	try {
-    		File file = new File("kernel.bat");
+    		File file = new File(outputFile);
     		file.delete();
     		
-			fileReader = new BufferedReader(new FileReader("ckernel_u.asm"));
-			File f = new File("ckernenl_u.asm");
+			fileReader = new BufferedReader(new FileReader(assemblyFileBeforeProcess));
+			File f = new File(assemblyFileBeforeProcess);
 			fileBuffer = new StringBuffer((int)f.length()); 
 		} catch (FileNotFoundException e) {
 			// TODO Auto-generated catch block
@@ -42,7 +60,7 @@ public class CKernelAsmPrecessor {
 			}
 			
 			fileReader.close();
-			BufferedWriter bw = new BufferedWriter(new FileWriter("ckernel.asm"));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(assemblyFileAfterProcess));
 			bw.write(fileBuffer.toString());
 			bw.close();
 		} catch (IOException e) {
@@ -55,7 +73,7 @@ public class CKernelAsmPrecessor {
     	handleOutOfRangeError();
     	
     	try {
-			Process process = Runtime.getRuntime().exec("nasm -o kernel.bat kernel.asm");
+			Process process = Runtime.getRuntime().exec("nasm -o " + outputFile + " " + originalAssemblyFile);
 			readProcessOutput(process);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -99,10 +117,11 @@ public class CKernelAsmPrecessor {
 			jumps.add("jge");
 			jumps.add("js");
 			jumps.add("je");
+			jumps.add("jns");
 			
 			
-    		fileReader = new BufferedReader(new FileReader("ckernel.asm"));
-			File f = new File("ckernenl.asm");
+    		fileReader = new BufferedReader(new FileReader(assemblyFileAfterProcess));
+			File f = new File(assemblyFileAfterProcess);
 			fileBuffer = new StringBuffer((int)f.length()); 
 			String lineText = null;
 			
@@ -122,7 +141,7 @@ public class CKernelAsmPrecessor {
 			}
 			
 			fileReader.close();
-			BufferedWriter bw = new BufferedWriter(new FileWriter("ckernel.asm"));
+			BufferedWriter bw = new BufferedWriter(new FileWriter(assemblyFileAfterProcess));
 			bw.write(fileBuffer.toString());
 			bw.close();
 			

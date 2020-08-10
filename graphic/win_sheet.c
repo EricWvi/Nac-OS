@@ -1,8 +1,8 @@
-#include "mem_manage.h"
-#include "window.h"
+#include "mem_util.h"
+#include "global_define.h"
+#include "multi_task.h"
+#include "win_sheet.h"
 
-//初始化窗口控制器
-//参数：内存地址，显存地址，屏幕尺寸
 struct SHTCTL *shtctl_init(struct MEMMAN *memman, unsigned char *vram,
   int xsize, int ysize) {
     struct SHTCTL *ctl;
@@ -23,22 +23,24 @@ struct SHTCTL *shtctl_init(struct MEMMAN *memman, unsigned char *vram,
     ctl->top = -1;
     for (i = 0; i < MAX_SHEETS; i++) {
         ctl->sheets0[i].flags = 0;
+        ctl->sheets0[i].task = 0;
     }
 
     return ctl;
 }
 
 #define SHEET_USE  1
-//窗口分配
 struct SHEET *sheet_alloc(struct SHTCTL *ctl) {
     struct SHEET *sht;
     int i;
     for (i = 0; i < MAX_SHEETS; i++) {
         if (ctl->sheets0[i].flags == 0) {
             sht = &ctl->sheets0[i];
-            ctl->sheets[i] = sht;
+//change here
+//            ctl->sheets[i] = sht;
             sht->flags = SHEET_USE;
             sht->height = -1;
+            sht->task = task_now();
             return sht;
         }
     }
@@ -143,7 +145,7 @@ void sheet_slide(struct SHTCTL *ctl, struct SHEET *sht, int vx0, int vy0) {
 }
 
 void sheet_refreshsub(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1, int h0, int h1) {
-    int h, bx, by, vx, vy;
+    int h, bx, by, vx, vy, bx0, by0, bx1, by1;
     unsigned char *buf, c, *vram = ctl->vram, *map = ctl->map, sid;
     struct SHEET *sht;
     if (vx0 < 0) {vx0 = 0;}
@@ -155,16 +157,27 @@ void sheet_refreshsub(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1, in
         sht = ctl->sheets[h];
         buf = sht->buf;
         sid = sht - ctl->sheets0;
-
-        for (by = 0; by < sht->bysize; by++) {
+//change here
+        bx0 = vx0 - sht->vx0;
+        by0 = vy0 - sht->vy0;
+        bx1 = vx1 - sht->vx0;
+        by1 = vy1 - sht->vy0;
+        if (bx0 < 0) {bx0 = 0;}
+        if (by0 < 0) {by0 = 0;}
+        if (bx1 > sht->bxsize) {bx1 = sht->bxsize;}
+        if (by1 > sht->bysize) {by1 = sht->bysize;}
+        for (by = 0; by < by1; by++) {
             vy = sht->vy0 + by;
-            for (bx = 0; bx < sht->bxsize; bx++) {
+            for (bx = 0; bx < bx1; bx++) {
                 vx = sht->vx0 + bx;
-                if (vx0 <= vx && vx < vx1 && vy0 <= vy && vy < vy1) {
+               /* if (vx0 <= vx && vx < vx1 && vy0 <= vy && vy < vy1) {
                     c = buf[by * sht->bxsize + bx];
                     if (map[vy * ctl->xsize + vx] == sid && c != sht->col_inv) {
                         vram[vy * ctl->xsize + vx] = c;
                     }
+                }*/
+                if (map[vy * ctl->xsize + vx] == sid) {
+                    vram[vy * ctl->xsize + vx] = buf[by * sht->bxsize + bx];
                 }
             }
         }
@@ -208,5 +221,14 @@ void sheet_refreshmap(struct SHTCTL *ctl, int vx0, int vy0, int vx1, int vy1, in
         
     }
 
+    return;
+}
+
+void sheet_free(struct SHTCTL *shtctl, struct SHEET *sht) {
+    if (sht->height >= 0) {
+        sheet_updown(shtctl, sht, -1);
+    }
+
+    sht->flags = 0;
     return;
 }

@@ -1,11 +1,15 @@
+[map symbols kernel.map]
 %include "pm.inc"
 
 org   8000h
 
-VRAM_ADDRESS  equ  0xe0000000 ; 显存地址
+VRAM_ADDRESS  equ  0x000a0000
 
+jmp  near LABEL_BEGIN
 
-jmp   LABEL_BEGIN
+LABEL_SYSTEM_FONT:
+%include "fontData.inc"
+SystemFontLength equ $ - LABEL_SYSTEM_FONT
 
 [SECTION .gdt]
  ;                                  段基址          段界限                属性
@@ -14,8 +18,24 @@ LABEL_DESC_CODE32:  Descriptor        0,      0fffffh,       DA_C | DA_32 | DA_L
 LABEL_DESC_VIDEO:   Descriptor        0B8000h,         0fffffh,            DA_DRW
 LABEL_DESC_VRAM:    Descriptor        0,         0fffffh,            DA_DRW | DA_LIMIT_4K
 
-LABEL_DESC_STACK:   Descriptor        0,             TopOfStack,        DA_DRWA | DA_32
+LABEL_DESC_STACK:   Descriptor        0,             0fffffh,        DA_DRW  |DA_32| DA_LIMIT_4K
+
 LABEL_DESC_FONT:    Descriptor        0,         0fffffh,   DA_DRW | DA_LIMIT_4K  
+
+LABEL_DESC_6:       Descriptor        0,      0fffffh,       0409Ah
+
+LABEL_DESC_7:       Descriptor        0,      0,       0
+
+LABEL_DESC_8:       Descriptor        0,      0,       0
+
+LABEL_DESC_9:       Descriptor        0,      0,       0
+
+LABEL_DESC_10:      Descriptor        0,      0,       0
+
+%rep  30
+Descriptor 0, 0, 0
+%endrep
+
 
 GdtLen     equ    $ - LABEL_GDT
 GdtPtr     dw     GdtLen - 1
@@ -28,22 +48,36 @@ SelectorVram      equ   LABEL_DESC_VRAM   -  LABEL_GDT
 SelectorFont      equ   LABEL_DESC_FONT - LABEL_GDT
 
 LABEL_IDT:
-%rep  32
+%rep  12
     Gate  SelectorCode32, SpuriousHandler,0, DA_386IGate
 %endrep
 
+.0Ch:
+    Gate SelectorCode32, stackOverFlowHandler,0, DA_386IGate
+
+.0Dh:
+    Gate SelectorCode32, exceptionHandler,0, DA_386IGate
+
+%rep  18
+    Gate  SelectorCode32, SpuriousHandler,0, DA_386IGate
+%endrep
+
+
 .020h:
-    Gate SelectorCode32, timerHandler,0, DA_386IGate ; 时钟中断
+    Gate SelectorCode32, timerHandler,0, DA_386IGate
 
 .021h:
-    Gate SelectorCode32, KeyBoardHandler,0, DA_386IGate ; 键盘中断
+    Gate SelectorCode32, KeyBoardHandler,0, DA_386IGate
 
 %rep  10
     Gate  SelectorCode32, SpuriousHandler,0, DA_386IGate
 %endrep
 
 .2CH:
-    Gate SelectorCode32, mouseHandler,0, DA_386IGate ; 鼠标中断
+    Gate SelectorCode32, mouseHandler,0, DA_386IGate
+.2DH:
+    Gate SelectorCode32, AsmConsPutCharHandler,0, DA_386IGate+0x60
+
 
 IdtLen  equ $ - LABEL_IDT
 IdtPtr  dw  IdtLen - 1
@@ -60,7 +94,12 @@ LABEL_BEGIN:
      mov   ss, ax
      mov   sp, 0100h
 
-     ;计算内存
+keystatus:
+     ;mov   ah, 0x02
+     ;int   0x16
+     ;mov   [LEDS], al
+
+     ;calculate memory 
 ComputeMemory:
      mov   ebx, 0
      mov   di, MemChkBuf
@@ -92,6 +131,8 @@ LABEL_MEM_CHK_OK:
      mov   byte [LABEL_DESC_CODE32 + 4], al
      mov   byte [LABEL_DESC_CODE32 + 7], ah
 
+
+
      xor   eax, eax
      mov   ax,  cs
      shl   eax, 4
@@ -100,6 +141,7 @@ LABEL_MEM_CHK_OK:
      shr   eax, 16
      mov   byte [LABEL_DESC_FONT + 4], al
      mov   byte [LABEL_DESC_FONT + 7], ah
+    
 
      xor   eax, eax
      mov   ax, ds
@@ -107,14 +149,13 @@ LABEL_MEM_CHK_OK:
      add   eax,  LABEL_GDT
      mov   dword  [GdtPtr + 2], eax
 
-
      lgdt  [GdtPtr]
 
      cli   ;关中断
 
      call init8259A
 
-     ;加载中断描述符表
+     ;prepare for loading IDT
      xor   eax, eax
      mov   ax,  ds
      shl   eax, 4
@@ -130,11 +171,12 @@ LABEL_MEM_CHK_OK:
      or    eax , 1
      mov   cr0, eax
 
+ 
+     cli
 
+     jmp   dword  1*8: 0
 
-     jmp   dword  SelectorCode32: 0
-
-init8259A:                        ;8259A芯片
+init8259A:
      mov  al, 011h
      out  020h, al
      call io_delay
@@ -158,14 +200,14 @@ init8259A:                        ;8259A芯片
      out  0A1h, al
      call io_delay
 
-     mov  al, 003h
+     mov  al, 001h
      out  021h, al
      call io_delay
 
      out  0A1h, al
      call io_delay
 
-     mov  al, 11111000b ;允许键盘鼠标和时钟中断
+     mov  al, 11111000b ;允许键盘和时钟中断
      out  021h, al
      call io_delay
 
@@ -182,88 +224,142 @@ io_delay:
      nop
      ret
 
-
     [SECTION .s32]
     [BITS  32]
      LABEL_SEG_CODE32:
-
-     ;初始化堆栈
+     
+     ;initialize stack for c code
      mov  ax, SelectorStack
      mov  ss, ax
-     mov  esp, TopOfStack
+     mov  esp, 04000h
 
      mov  ax, SelectorVram
      mov  ds,  ax
 
      mov  ax, SelectorVideo
      mov  gs, ax
-        
-     sti
 
-     %include "ckernel.asm"
-     jmp  $
+     cli  ;change
 
+    %include "ckernel.asm"
+     jmp $
 
+    
 _SpuriousHandler:
 SpuriousHandler  equ _SpuriousHandler - $$
      iretd
 
 _KeyBoardHandler:
 KeyBoardHandler equ _KeyBoardHandler - $$
-     push es
-     push ds
      pushad
-     mov  eax, esp
-     push eax
+     push ds
+     push es
+     push fs
+     push gs
+    
+     mov  ax, SelectorVram
+     mov  ds, ax
+     mov  es, ax
+     mov  gs, ax
 
      call intHandlerFromC
     
 
-     pop  eax
-     mov  esp, eax
+     pop gs
+     pop fs
+     pop es
+     pop ds
+
      popad
-     pop  ds
-     pop  es
+
      iretd
 
 
 _mouseHandler:
 mouseHandler equ _mouseHandler - $$
-     push es
-     push ds
      pushad
-     mov  eax, esp
-     push eax
+     push ds
+     push es
+     push fs
+     push gs
+
+     mov  ax, SelectorVram
+     mov  ds, ax
+     mov  es, ax
+     mov  gs, ax
 
      call intHandlerForMouse
-    
 
-     pop  eax
-     mov  esp, eax
+     pop gs
+     pop fs
+     pop es
+     pop ds
+
      popad
-     pop  ds
-     pop  es
+
      iretd
+
 
 _timerHandler:
 timerHandler equ _timerHandler - $$
-     push es
-     push ds
-     pushad
-     mov  eax, esp
-     push eax
+    push es
+    push ds
+    pushad
+    mov  eax, esp
+    push eax
 
-     call intHandlerForTimer
+    mov  ax, SelectorVram
+    mov  ds, ax
+    mov  es, ax
+    mov  gs, ax
     
 
-     pop  eax
-     mov  esp, eax
-     popad
-     pop  ds
-     pop  es
-     iretd
+    call intHandlerForTimer
+    
+    pop eax
+    popad
+    pop ds
+    pop es
+    iretd
 
-    get_font_data:
+_stackOverFlowHandler:
+stackOverFlowHandler equ _stackOverFlowHandler - $$
+    sti
+    push es
+    push ds
+    pushad
+    mov eax, esp
+    push eax
+    ;把内存段切换到内核
+    mov  ax, SelectorVram
+    mov  ds, ax
+    mov  es, ax 
+
+    call intHandlerForStackOverFlow
+    
+    jmp near end_app
+
+_exceptionHandler:
+exceptionHandler equ _exceptionHandler - $$
+    sti
+    push es
+    push ds
+    pushad
+    mov eax, esp
+    push eax
+    ;把内存段切换到内核
+    mov  ax, SelectorVram
+    mov  ds, ax
+    mov  es, ax 
+
+
+    call intHandlerForException
+    
+    jmp near end_app
+
+
+
+get_font_data:
     mov ax, SelectorFont
     mov es, ax
     xor edi, edi
@@ -340,13 +436,116 @@ timerHandler equ _timerHandler - $$
         mov  eax, [dwMCRNumber]
         ret
 
+    get_leds:
+        mov eax, [LEDS]
+        ret
+
     get_adr_buffer:
         mov  eax, MemChkBuf
         ret
 
 
+    get_addr_gdt:
+        mov  eax, LABEL_GDT
+        ret
+
+    get_code32_addr:
+        mov  eax, LABEL_SEG_CODE32
+        ret
+
+    load_tr:
+        LTR  [esp + 4]
+        ret
+
+    
+    farjmp:
+        mov  eax, [esp]
+        push 1*8
+        push eax
+        jmp FAR [esp+12]
+        ret
+
+asm_cons_putchar:
+AsmConsPutCharHandler equ asm_cons_putchar - $$
+
+        push ds
+        push es
+       
+        pushad
+        pushad
+        
+        ;把内存段切换到内核
+        mov  ax, SelectorVram
+        mov  ds, ax
+        mov  es, ax 
+        mov  gs, ax
+        
+        call kernel_api
+        sti
+
+        cmp eax, 0
+        jne end_app
+
+        popad
+        popad
+        pop es
+        pop ds
+        iretd
+end_app:
+        mov esp, [eax]
+        popad
+        ret
+
+        
+get_esp:
+    mov eax ,esp
+    ret
+get_ss:
+    xor eax, eax
+    mov eax, ss
+    ret
+
+start_app:  ;void start_app(int eip, int cs,int esp, int ds, &(task->tss.esp0))
+
+    pushad
+
+    mov eax, [esp+52]
+    mov [eax], esp
+    mov [eax+4], ss
+
+    mov eax, [esp+36]  ;eip
+    mov ecx, [esp+40]  ;cs
+    mov edx, [esp+44]  ;esp
+    mov ebx, [esp+48]  ;ds
+
+    mov  ds,  bx
+    mov  es,  bx
+
+    or ecx,3
+    or ebx, 3
+    
+
+    push ebx
+    push edx
+    push ecx
+    push eax
+
+    retf
+
+asm_end_app:
+    mov eax, [esp + 4]
+    mov esp, [eax]
+    mov DWORD [eax+4], 0
+    popad
+    ret
+    
+load_ldt:
+    mov ax, [esp + 4]
+    lldt ax
+
 SegCode32Len   equ  $ - LABEL_SEG_CODE32
 
+ 
 
 [SECTION .data]
 ALIGN 32
@@ -354,17 +553,11 @@ ALIGN 32
 
 MemChkBuf: times 256 db 0
 dwMCRNumber:   dd 0
+LEDS : db 0
 
 
-[SECTION .gs]
-ALIGN 32
-[BITS 32]
-LABEL_STACK:
-times 512  db 0
-TopOfStack  equ  $ - LABEL_STACK
 
 
-LABEL_SYSTEM_FONT:
-%include "fontData.inc"
 
-SystemFontLength equ $ - LABEL_SYSTEM_FONT
+
+

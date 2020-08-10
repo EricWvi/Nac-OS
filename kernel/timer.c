@@ -1,13 +1,14 @@
 #include "global_define.h"
+#include "multi_task.h"
 #include "timer.h"
+
 #define  PIC0_OCW2     0x20
 #define  PIC1_OCW2    0xA0
 #define  TIMER_FLAGS_ALLOC  1
 #define  TIMER_FLAGS_USING  2
 
 static struct TIMERCTL timerctl;
-
-void io_out8(int, int);
+extern struct TIMER *task_timer;
 
 void  init_pit(void) {
     io_out8(PIT_CTRL, 0x34);
@@ -18,6 +19,7 @@ void  init_pit(void) {
     int i;
     for (i = 0; i < MAX_TIMER; i++) {
         timerctl.timer[i].flags = 0; //not used
+        timerctl.timer[i].fifo = 0;
     }
 }
 
@@ -51,21 +53,30 @@ void timer_settime(struct TIMER *timer, unsigned int timeout) {
 }
 
 
-
 void intHandlerForTimer(char *esp) {
-    io_out8(PIC0_OCW2, 0x60); //处理完本次中断后可以响应下次中断
-    timerctl.count++;
+    io_out8(PIC0_OCW2, 0x20);
 
+    timerctl.count++;
     int i;
+    char ts = 0;
+
     for (i = 0; i < MAX_TIMER; i++) {
         if (timerctl.timer[i].flags == TIMER_FLAGS_USING) {
             timerctl.timer[i].timeout--;
             if (timerctl.timer[i].timeout == 0) {
                 timerctl.timer[i].flags = TIMER_FLAGS_ALLOC;
                 fifo8_put(timerctl.timer[i].fifo, timerctl.timer[i].data);
+                if (&timerctl.timer[i] == task_timer) {
+                    ts = 1;
+                }
             }
         }
+ 
+        if (ts != 0) {
+           task_switch();
+        }
     }
+
 
     return;
 }

@@ -1,4 +1,4 @@
-#include "mem_manage.h"
+#include "mem_util.h"
 
 //内存初始化
 void memman_init(struct MEMMAN *man) {
