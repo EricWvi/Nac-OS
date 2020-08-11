@@ -855,9 +855,9 @@ void console_task(struct SHEET *sheet, int memtotal) {
 
         task = task_now();
         // 修改
-        if (fifo8_status(&mouseinfo) != 0) {
+        /*if (fifo8_status(&mouseinfo) != 0) {
           show_mouse_info(shtctl, sht_back, sht_mouse);
-        }
+        }*/
         if (fifo8_status(&task->fifo) == 0) {
             //task_sleep(task_cons);
             io_sti();
