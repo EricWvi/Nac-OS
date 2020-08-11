@@ -566,6 +566,12 @@ void kill_process() {
     asm_end_app(&(task->tss.esp0));
 }
 
+void cmd_process() {
+  struct SHEET* sht_cons = launch_console(console_count);
+  sheet_slide(shtctl, sht_cons, 156, 176);
+  sheet_updown(shtctl, sht_cons, 1);
+  console_count++;
+}
 
 void cmd_dir() {
     struct TASK *task = task_now();
@@ -912,6 +918,9 @@ void console_task(struct SHEET *sheet, int memtotal) {
                 }//change here
                 else if (strcmp(cmdline, "crack") == 1) {
                    cmd_execute_program("crack.exe");
+                }
+                else if (strcmp(cmdline, "process") == 1) {
+                  cmd_process();
                 }
 
                 task->console.cur_x = 16;
