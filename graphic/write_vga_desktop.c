@@ -123,6 +123,7 @@ static char timerbuf[8];
 char   charToHexVal(char c);
 char*  charToHexStr(unsigned char c);
 char*  intToHexStr(unsigned int d);
+char*  intToProcessStr(int d);
 
 void  init_keyboard(void);
 void  enable_mouse(struct MOUSE_DEC *mdec);
@@ -573,6 +574,32 @@ void cmd_process() {
   console_count++;
 }
 
+void cmd_list() {
+  struct TASK* task = task_now();
+  if (task->console.sht == 0) {
+    return;
+  }
+  struct TASKCTL* taskctl = get_taskctl();
+  showString(shtctl, task->console.sht, 16, task->console.cur_y, COL8_FFFFFF, "name");
+  showString(shtctl, task->console.sht, 112, task->console.cur_y, COL8_FFFFFF, "selector");
+  task->console.cur_y = cons_newline(task->console.cur_y, task->console.sht);
+  int cnt = 0;
+  for (int i = 0; i < MAX_TASKS; i++) {
+    if (taskctl->tasks0[i].flags) {
+      //showString(shtctl, task->console.sht, 16, task->console.cur_y, COL8_FFFFFF, "free ");
+      //showString(shtctl, task->console.sht, 52, task->console.cur_y, COL8_FFFFFF, s);
+      //showString(shtctl, task->console.sht, 126, task->console.cur_y, COL8_FFFFFF, " KB");
+      //task->console.cur_y = cons_newline(task->console.cur_y, task->console.sht);
+      char* selector = intToHexStr(taskctl->tasks0[i].sel);
+      char* name = intToProcessStr(cnt);
+      showString(shtctl, task->console.sht, 16, task->console.cur_y, COL8_FFFFFF, name);
+      showString(shtctl, task->console.sht, 112, task->console.cur_y, COL8_FFFFFF, selector);
+      task->console.cur_y = cons_newline(task->console.cur_y, task->console.sht);
+      cnt++;
+    }
+  }
+}
+
 void cmd_dir() {
     struct TASK *task = task_now();
 
@@ -921,6 +948,9 @@ void console_task(struct SHEET *sheet, int memtotal) {
                 }
                 else if (strcmp(cmdline, "process") == 1) {
                   cmd_process();
+                }
+                else if (strcmp(cmdline, "list") == 1) {
+                  cmd_list();
                 }
 
                 task->console.cur_x = 16;
@@ -1581,6 +1611,25 @@ char*  intToHexStr(unsigned int d) {
     return str;
 }
 
+char* intToProcessStr(int d) {
+  if (!d) {
+    static char tmp[11] = "main";
+    return tmp;
+  }
+  static char res[11] = "process";
+  int cur = 7;
+  while (d) {
+    res[cur++] = (d % 10) + '0';
+    d /= 10;
+  }
+  res[cur] = 0;
+  for (int i = 7, j = cur - 1; i < j; i++, j--) {
+    char t = res[i];
+    res[i] = res[j];
+    res[j] = t;
+  }
+  return res;
+}
 #define  PORT_KEYDAT  0x0060
 #define  PORT_KEYSTA  0x0064
 #define  PORT_KEYCMD  0x0064
