@@ -1,19 +1,20 @@
-#define  COL8_000000  0
-#define  COL8_FF0000  1
-#define  COL8_00FF00  2
-#define  COL8_FFFF00  3
-#define  COL8_0000FF  4
-#define  COL8_FF00FF  5
-#define  COL8_00FFFF  6
-#define  COL8_FFFFFF  7
-#define  COL8_C6C6C6  8
-#define  COL8_840000  9
-#define  COL8_008400  10
-#define  COL8_848400  11
-#define  COL8_000084  12
-#define  COL8_840084  13
-#define  COL8_008484  14
-#define  COL8_848484  15
+//颜色
+#define  COL8_000000  0 //全黑
+#define  COL8_FF0000  1 //亮红
+#define  COL8_00FF00  2 //亮绿
+#define  COL8_FFFF00  3 //亮黄
+#define  COL8_0000FF  4 //亮蓝 
+#define  COL8_FF00FF  5 //亮紫 
+#define  COL8_00FFFF  6 //浅亮
+#define  COL8_FFFFFF  7 //全白
+#define  COL8_C6C6C6  8 //亮灰
+#define  COL8_840000  9 //暗红
+#define  COL8_008400  10 //暗绿
+#define  COL8_848400  11 //暗黄
+#define  COL8_000084  12 //暗蓝
+#define  COL8_840084  13 //暗紫
+#define  COL8_008484  14 //浅暗蓝 
+#define  COL8_848484  15 //暗灰
 
 #define  PORT_KEYDAT  0x0060
 #define  PIC_OCW2     0x20
@@ -123,6 +124,7 @@ static char timerbuf[8];
 char   charToHexVal(char c);
 char*  charToHexStr(unsigned char c);
 char*  intToHexStr(unsigned int d);
+char*  intToDecStr(unsigned int d);
 
 void  init_keyboard(void);
 void  enable_mouse(struct MOUSE_DEC *mdec);
@@ -707,10 +709,10 @@ void cmd_mem(int memtotal) {
     if (task->console.sht == 0) {
         return;
     }  
-    char *s = intToHexStr(memtotal / (1024));
+    char *s = intToDecStr(memtotal/(1024*1024));
     showString(shtctl,task->console.sht,16,task->console.cur_y,COL8_FFFFFF, "free ");
     showString(shtctl,task->console.sht,52,task->console.cur_y, COL8_FFFFFF, s);
-    showString(shtctl, task->console.sht, 126, task->console.cur_y, COL8_FFFFFF, " KB");
+    showString(shtctl, task->console.sht, 86, task->console.cur_y, COL8_FFFFFF, " MB");
     task->console.cur_y = cons_newline(task->console.cur_y, task->console.sht);
 }
 
@@ -1254,22 +1256,12 @@ int cons_newline(int cursor_y, struct SHEET *sheet) {
 }
 
 void init_screen8(char* vram, int xsize, int ysize) {
-    boxfill8(vram, xsize, COL8_008484, 0, 0, xsize-1, ysize-29);
+    boxfill8(vram, xsize, COL8_000000, 0, 0, xsize-1, ysize-29);
     boxfill8(vram, xsize, COL8_C6C6C6, 0, ysize-28, xsize-1, ysize-28);
     boxfill8(vram, xsize, COL8_FFFFFF, 0, ysize-27, xsize-1, ysize-27);
     boxfill8(vram, xsize, COL8_C6C6C6, 0, ysize-26, xsize-1, ysize-1);
 
-    boxfill8(vram, xsize, COL8_FFFFFF, 3, ysize-24, 59, ysize-24);
-    boxfill8(vram, xsize, COL8_FFFFFF, 2, ysize-24, 2, ysize-4);
-    boxfill8(vram, xsize, COL8_848484, 3, ysize-4,  59, ysize-4);
-    boxfill8(vram, xsize, COL8_848484, 59, ysize-23, 59, ysize-5);
-    boxfill8(vram, xsize, COL8_000000, 2, ysize-3, 59, ysize-3);
-    boxfill8(vram, xsize, COL8_000000, 60, ysize-24, 60, ysize-3);
-
-    boxfill8(vram, xsize, COL8_848484, xsize-47, ysize-24, xsize-4, ysize-24);
-    boxfill8(vram, xsize, COL8_848484, xsize-47, ysize-23, xsize-47, ysize-4);
-    boxfill8(vram, xsize, COL8_FFFFFF, xsize-47, ysize-3, xsize-4, ysize-3);
-    boxfill8(vram, xsize, COL8_FFFFFF, xsize-3,  ysize-24, xsize-3, ysize-3);
+    
 
 }
 
@@ -1470,22 +1462,22 @@ void showFont8(char *vram, int xsize, int x, int y, char c, char* font) {
 
 void init_mouse_cursor(char* mouse, char bc) {
     static char cursor[16][16] = {
-		"**************..",
-		"*OOOOOOOOOOO*...",
-		"*OOOOOOOOOO*....",
-		"*OOOOOOOOO*.....",
-		"*OOOOOOOO*......",
+		"***.............",
+		"*OO*............",
+		"*OOO*...........",
+		"*OOOO*..........",
+		"*OOOOO*.........",
+		"*OOOOOO*........",
 		"*OOOOOOO*.......",
-		"*OOOOOOO*.......",
 		"*OOOOOOOO*......",
-		"*OOOO**OOO*.....",
-		"*OOO*..*OOO*....",
-		"*OO*....*OOO*...",
-		"*O*......*OOO*..",
-		"**........*OOO*.",
-		"*..........*OOO*",
-		"............*OO*",
-		".............***"
+		"*OOOOOO**.......",
+		"*OOOOO*.........",
+		"*OO*OO*.........",
+		"*O*.*OO*........",
+		"**..*OOO........",
+		"*...****........",
+		"................",
+		"................"
 	};
 
       int x, y;
@@ -1566,6 +1558,31 @@ char*  intToHexStr(unsigned int d) {
         p--;
     } 
 
+    return str;
+}
+
+char*  intToDecStr(unsigned int d) {
+    static char str[11];
+    str[0] = '0';
+    str[1] = '0';
+    str[10] = 0;
+
+    int i = 2;
+    for(; i < 10; i++) {
+        str[i] = '0';
+    }
+
+    int p = 9;
+    while (p > 1 && d > 0) {
+        int e = d % 10;
+        d /= 10;
+        str[p] = '0' + e;      
+        p--;
+    } 
+    for(i = 0; i < 9 - p; i++){
+        str[i] = str[i+p+1];
+    }
+    str[i] = 0;
     return str;
 }
 
