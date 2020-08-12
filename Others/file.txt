@@ -1,0 +1,13 @@
+ls指令：展示当前目录的文件和文件夹
+cd filefolder指令：进入文件夹
+back指令：返回上一级目录
+n1指令：创建文件
+n2指令：创建文件夹
+type指令：读取文件内容
+
+接口：
+文件打开 api_fopen
+文件定位 api_fseek
+文件读取 api_fread
+文件写入 api_fwrite
+文件关闭 api_fclose

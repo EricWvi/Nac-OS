@@ -188,6 +188,18 @@ int console_count = 0;
 
 //change here
 int show_console_window = 1;
+//file
+struct fcb
+{
+	char name[8];
+	int type;
+	int location;
+};
+static int catalogue[50];
+static struct fcb f[50];
+int now = -1;
+int now_pos = 0;
+
 
 void CMain(void) {
 
@@ -782,6 +794,21 @@ void cmd_execute_program(char* file) {
     io_sti();
     
 }
+void cmd_ls()
+{
+  struct TASK *task = task_now();
+
+    struct FILEINFO *finfo = (struct FILEINFO*)(ADR_DISKIMG);
+    for (int i = 0; i < now_pos; i++)
+    {
+    if (catalogue[i] == now)
+    {
+      showString(shtctl, task->console.sht, 16, task->console.cur_y, COL8_FFFFFF, f[i].name);
+      task->console.cur_y = cons_newline(task->console.cur_y, task->console.sht);
+      finfo++;
+    }
+    }
+}
 void cmd_execute_program2(char* file) {
     io_cli();
     struct Buffer *appBuffer = (struct Buffer*)memman_alloc(memman, 16);
@@ -883,7 +910,21 @@ void console_task(struct SHEET *sheet, int memtotal) {
 
     struct FILEINFO* finfo = (struct FILEINFO*)(ADR_DISKIMG);
     int hlt = 0;
-
+    for (int i = 0; i < 50; i++)
+	{
+		catalogue[i] = -2;
+	}
+  newFile("n1 abc.txt");
+  newFile("n1 abc.exe");
+  newFile("n1 hlt.bat");
+  newFilefolder("n2 a");
+  newFilefolder("n2 b");
+  cd("cd a");
+  newFile("n1 a.txt");
+  back();
+  cd("cd b");
+  newFile("n1 b.txt");
+  back();
     for(;;) { 
         io_cli();
 
@@ -952,6 +993,21 @@ void console_task(struct SHEET *sheet, int memtotal) {
                 }//change here
                 else if (strcmp(cmdline, "hhh") == 1) {
                    cmd_execute_program("crack.exe");
+                }
+                else if (strcmp(cmdline, "back") == 1) {
+                   back();
+                }
+                else if (strcmp(cmdline, "ls") == 1) {
+                   cmd_ls();
+                }
+                else if (cmdline[0] == 'n' && cmdline[1] == '1') {
+                   newFile(cmdline);
+                }
+                else if (cmdline[0] == 'n' && cmdline[1] == '2') {
+                   newFilefolder(cmdline);
+                }
+                else if (cmdline[0] == 'c' && cmdline[1] == 'd') {
+                   cd(cmdline);
                 }
                 else if (strcmp(cmdline, "process") == 1) {
                   cmd_process();
@@ -1938,3 +1994,110 @@ int* intHandlerForException(int *esp) {
     return &(task->tss.esp0);
 }
 
+void newFile(char* cmd)
+{
+  char fileName[8];
+  int k = 0;
+  for(k = 0;k < 8;k++)
+  {
+    if(cmd[k+3]==0)break;
+    fileName[k] = cmd[k+3];
+  }
+  fileName[k] = 0;
+  int i = 0;
+  for (i = 0; i < 8; i++)
+  {
+    if (fileName[i] != 0)
+    {
+      f[now_pos].name[i] = fileName[i];
+    }
+    else
+    {
+      break;
+    }
+  }
+  f[now_pos].name[i] = 0;
+  f[now_pos].type = 1;
+  f[now_pos].location = now_pos;
+  catalogue[now_pos] = now;
+  now_pos++;
+}
+void newFilefolder(char* cmd)
+{
+  char fileName[8];
+  int k = 0;
+  for(k = 0;k < 8;k++)
+  {
+    if(cmd[k+3]==0)break;
+    fileName[k] = cmd[k+3];
+  }
+  fileName[k] = 0;
+
+  int i = 0;
+  for (i = 0; i < 8; i++)
+  {
+    if (fileName[i] != 0)
+    {
+      f[now_pos].name[i] = fileName[i];
+    }
+    else
+    {
+      break;
+    }
+  }
+  f[now_pos].name[i] = 0;
+  f[now_pos].type = 0;
+  f[now_pos].location = now_pos;
+  catalogue[now_pos] = now;
+  now_pos++;
+}
+void cd(char* cmd)
+{
+  char fileName[8];
+  int k = 0;
+  for(k = 0;k < 8;k++)
+  {
+    if(cmd[k+3]==0)break;
+    fileName[k] = cmd[k+3];
+  }
+  fileName[k] = 0;
+
+  for (int i = 0; i < now_pos; i++)
+  {
+    if (catalogue[i] == now)
+    {
+      if (f[i].type == 0)
+      {
+        if (cmp(f[i].name, fileName))
+        {
+          now = f[i].location;
+          break;
+        }
+      }
+    }
+  }
+}
+void back()
+{
+  if (now != -1)
+  {
+    now = catalogue[now];
+  }
+}
+int cmp(char* f1, char* f2)
+{
+  int i = 0;
+  while ((f1[i] == 0) || (f2[i] == 0))
+  {
+    if (f1[i] != f2[i])
+    {
+      return 0;
+    }
+    i++;
+  }
+  if (f1[i] != f2[i])
+  {
+    return 0;
+  }
+  return 1;
+}
