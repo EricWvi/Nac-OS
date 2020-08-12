@@ -24,6 +24,8 @@
 #include "timer.h"
 #include "global_define.h"
 #include "multi_task.h"
+
+
 //change here
 void load_ldt(short s);
 
@@ -55,6 +57,10 @@ void close_console(struct TASK *task);
 void cmd_exit(struct TASK *cons_task);
 
 void cons_putchar(char chr, char move);
+
+char * IntToDecStr(int x);
+
+
 
 static char keytable[0x54] = {
 		0,   0,   '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '^', 0,   0,
@@ -910,6 +916,26 @@ void cmd_ncst(char *scanCodeBuf) {
     fifo8_put(&task->fifo, KEY_RETURN);
 }
 
+//运行计算器的函数
+void cmd_calculator(char* expression,struct MEMMAN* mem){
+    struct TASK* task = task_now();
+    if (task->console.sht == 0) {
+        return;
+    }
+    int pos=0;
+    int i;
+    int length = getLength(expression);
+    for(i=0;i<length;i++){
+        if(expression[i]!=' '){
+            break;  
+		}
+	}
+   int result = calculator(expression+i,mem);
+    char * str = IntToDecStr(result);
+    showString(shtctl,task->console.sht,20,task->console.cur_y, COL8_FFFFFF, str);
+    task->console.cur_y = cons_newline(task->console.cur_y, task->console.sht);
+    
+}
 
 void console_task(struct SHEET *sheet, int memtotal) {
     struct TIMER *timer;
@@ -1042,7 +1068,9 @@ void console_task(struct SHEET *sheet, int memtotal) {
                 }
                 else if (strcmp(cmdline, "list") == 1) {
                   cmd_list();
-                }
+                }else if(cmdline[0]=='c' && cmdline[1]=='a'&&cmdline[2]=='l' && cmdline[3]=='c'&& cmdline[4]=='u'){
+                    cmd_calculator(cmdline+5 ,memman);
+				}
 
                 task->console.cur_x = 16;
             }
@@ -1734,6 +1762,34 @@ char*  intToDecStr(unsigned int d) {
     }
     str[i] = 0;
     return str;
+}
+
+char * IntToDecStr(int x){
+    static char str[14];
+    int a=12;
+    str[13]='\0';
+    //当输入是正数时
+    if(x>0){
+        while(x != 0){
+            int bit = x % 10;
+            x = x/10;
+            str[a--]='0'+bit;
+		}
+        return str+a+1;
+	}else if(x == 0){
+        str[0]='0';
+        str[1]='\0';
+        return str;
+	}else if(x < 0){
+        x = 0-x;
+        while(x != 0){
+            int bit = x % 10;
+            x = x/10;
+            str[a--]='0'+bit;
+		}
+        str[a]='-';
+        return str+a;
+	}
 }
 
 #define  PORT_KEYDAT  0x0060
