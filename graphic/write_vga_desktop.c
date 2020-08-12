@@ -568,6 +568,12 @@ void kill_process() {
     asm_end_app(&(task->tss.esp0));
 }
 
+void cmd_process() {
+  struct SHEET* sht_cons = launch_console(console_count);
+  sheet_slide(shtctl, sht_cons, 156, 176);
+  sheet_updown(shtctl, sht_cons, 1);
+  console_count++;
+}
 
 void cmd_dir() {
     struct TASK *task = task_now();
@@ -745,22 +751,54 @@ void cmd_execute_program(char* file) {
 
     file_loadfile(file, appBuffer);
     struct SEGMENT_DESCRIPTOR *gdt =(struct SEGMENT_DESCRIPTOR *)get_addr_gdt();
-    //select is multiply of 8, divided by 8 get the original value
-    int code_seg = 21 + (task->sel - first_task_cons_selector) / 8;
-    int mem_seg = 30 + (task->sel - first_task_cons_selector) / 8;//22;
-    set_segmdesc(task->ldt + 0, 0xfffff, (int) appBuffer->pBuffer, 0x409a + 0x60);
-    //new memory 
+    
+	set_segmdesc(gdt+21, 0xfffff, (int) appBuffer->pBuffer, 0x409a + 0x60);    //new memory 
     char *q = (char *) memman_alloc_4k(memman, 64*1024);
     appBuffer->pDataSeg = (unsigned char*)q;
 //    char *pp = intToHexStr(q);
  //   showString(shtctl, sht_back, 0, 0,COL8_FFFFFF, pp);
 
 
-    set_segmdesc(task->ldt + 1, 0xfffff, (int) q, 0x4092 + 0x60);
-
+    set_segmdesc(gdt+22, 0xfffff, (int) q, 0x4092 + 0x60);
     task->tss.esp0 = 0;
     io_sti();
-    start_app(0, 0*8+4,64*1024, 1*8+4, &(task->tss.esp0));
+    start_app(0, 21*8,64*1024, 22*8, &(task->tss.esp0));
+    io_cli();
+    //change here
+    /*
+    close any file handles
+    */
+    int i = 0;
+    for (i = 0; i < 8; i++) {
+        if (task->fhandle[i].buf != 0) {
+            memman_free_4k(memman, (unsigned int)task->fhandle[i].buf, task->fhandle[i].size);
+            task->fhandle[i].buf = 0;
+        }
+    }
+    memman_free_4k(memman,(unsigned int) appBuffer->pBuffer, appBuffer->length);
+    memman_free_4k(memman, (unsigned int) q, 64 * 1024);
+    memman_free(memman,(unsigned int)appBuffer, 16);
+    task->pTaskBuffer = 0;
+    io_sti();
+    
+}
+void cmd_execute_program2(char* file) {
+    io_cli();
+    struct Buffer *appBuffer = (struct Buffer*)memman_alloc(memman, 16);
+    struct TASK *task = task_now();
+    task->pTaskBuffer = appBuffer;
+
+    file_loadfile(file, appBuffer);
+    struct SEGMENT_DESCRIPTOR *gdt =(struct SEGMENT_DESCRIPTOR *)get_addr_gdt();
+    //select is multiply of 8, divided by 8 get the original value
+    set_segmdesc(gdt+23, 0xfffff, (int) appBuffer->pBuffer, 0x409a + 0x60);
+    //new memory 
+    char *q = (char *) memman_alloc_4k(memman, 64*1024);
+    appBuffer->pDataSeg = (unsigned char*)q;
+    set_segmdesc(gdt+24, 0xfffff, (int) q, 0x4092 + 0x60);
+    task->tss.esp0 = 0;
+    io_sti();
+    start_app(0, 23*8,64*1024, 24*8, &(task->tss.esp0));
     io_cli();
     //change here
     /*
@@ -850,7 +888,10 @@ void console_task(struct SHEET *sheet, int memtotal) {
         io_cli();
 
         task = task_now();
-
+        // 修改
+        /*if (fifo8_status(&mouseinfo) != 0) {
+          show_mouse_info(shtctl, sht_back, sht_mouse);
+        }*/
         if (fifo8_status(&task->fifo) == 0) {
             //task_sleep(task_cons);
             io_sti();
@@ -909,8 +950,11 @@ void console_task(struct SHEET *sheet, int memtotal) {
                 else if (strcmp(cmdline, "ncst") == 1) {
                    cmd_ncst(scanCodeBuf);
                 }//change here
-                else if (strcmp(cmdline, "crack") == 1) {
+                else if (strcmp(cmdline, "hhh") == 1) {
                    cmd_execute_program("crack.exe");
+                }
+                else if (strcmp(cmdline, "process") == 1) {
+                  cmd_process();
                 }
 
                 task->console.cur_x = 16;
