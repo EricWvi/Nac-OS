@@ -1,8 +1,7 @@
 [map symbols app_c.map]
 [SECTION .s32]
 BITS 32
-mov AX, 30 * 8
-mov DS, ax
+
 call main
 
 mov  edx, 4  ;返回内核
@@ -27,6 +26,7 @@ api_openwin:  ;int api_openwin(char*buf, int xsiz, int ysiz, int col_inv, char*t
   push edi
   push esi
   push ebx
+
   mov  edx, 5
   mov  ebx, [esp+16] ;buf
   mov  esi, [esp+20] ;xsiz
@@ -34,6 +34,7 @@ api_openwin:  ;int api_openwin(char*buf, int xsiz, int ysiz, int col_inv, char*t
   mov  eax, [esp+28] ;col_inv
   mov  ecx, [esp+32] ;title
   int  02Dh
+
   pop  ebx
   pop  esi
   pop  edi
@@ -182,5 +183,43 @@ api_showstring:
   pop  ebx
   ret
 
+api_fopen:  ;int api_fopen(char *fname)
+  push ebx
+  mov edx, 21
+  mov ebx, [esp + 8]
+  int 02Dh
+  pop ebx
+  ret
 
+api_close:  ;void api_close(int handle)
+  mov edx, 22
+  mov eax, [esp+4]
+  int 02Dh
+
+api_fseek:  ;void api_fseek(int fhandle, int offset, int mode)
+  push ebx
+  mov edx, 23
+  mov eax, [esp+8] ;fhandle
+  mov ecx, [esp+16] ; mode
+  mov ebx, [esp+12] ; offset
+  int 02Dh
+  pop ebx
+  ret
+
+api_fsize:  ;int api_fsize(int fhandle, int mode)
+  mov edx, 24
+  mov eax, [esp+4]
+  mov ecx, [esp+8]
+  int 02Dh
+  ret
+
+api_fread: ;int api_fread(char *buf, int maxsize, int fhandle)
+  push ebx
+  mov edx, 25
+  mov eax, [esp+16]  ;fhandle
+  mov ecx, [esp+12]  ;maxsize
+  mov ebx, [esp+8]   ;buf
+  int 02Dh
+  pop ebx
+  ret
 %include "crack.asm"

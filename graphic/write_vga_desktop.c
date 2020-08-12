@@ -1,19 +1,20 @@
-#define  COL8_000000  0
-#define  COL8_FF0000  1
-#define  COL8_00FF00  2
-#define  COL8_FFFF00  3
-#define  COL8_0000FF  4
-#define  COL8_FF00FF  5
-#define  COL8_00FFFF  6
-#define  COL8_FFFFFF  7
-#define  COL8_C6C6C6  8
-#define  COL8_840000  9
-#define  COL8_008400  10
-#define  COL8_848400  11
-#define  COL8_000084  12
-#define  COL8_840084  13
-#define  COL8_008484  14
-#define  COL8_848484  15
+//颜色
+#define  COL8_000000  0 //全黑
+#define  COL8_FF0000  1 //亮红
+#define  COL8_00FF00  2 //亮绿
+#define  COL8_FFFF00  3 //亮黄
+#define  COL8_0000FF  4 //亮蓝 
+#define  COL8_FF00FF  5 //亮紫 
+#define  COL8_00FFFF  6 //浅亮
+#define  COL8_FFFFFF  7 //全白
+#define  COL8_C6C6C6  8 //亮灰
+#define  COL8_840000  9 //暗红
+#define  COL8_008400  10 //暗绿
+#define  COL8_848400  11 //暗黄
+#define  COL8_000084  12 //暗蓝
+#define  COL8_840084  13 //暗紫
+#define  COL8_008484  14 //浅暗蓝 
+#define  COL8_848484  15 //暗灰
 
 #define  PORT_KEYDAT  0x0060
 #define  PIC_OCW2     0x20
@@ -124,6 +125,8 @@ char   charToHexVal(char c);
 char*  charToHexStr(unsigned char c);
 char*  intToHexStr(unsigned int d);
 char*  intToProcessStr(int d);
+char*  intToDecStr(unsigned int d);
+
 
 void  init_keyboard(void);
 void  enable_mouse(struct MOUSE_DEC *mdec);
@@ -187,6 +190,18 @@ int console_count = 0;
 
 //change here
 int show_console_window = 1;
+//file
+struct fcb
+{
+	char name[8];
+	int type;
+	int location;
+};
+static int catalogue[50];
+static struct fcb f[50];
+int now = -1;
+int now_pos = 0;
+
 
 void CMain(void) {
 
@@ -740,10 +755,10 @@ void cmd_mem(int memtotal) {
     if (task->console.sht == 0) {
         return;
     }  
-    char *s = intToHexStr(memtotal / (1024));
+    char *s = intToDecStr(memtotal/(1024*1024));
     showString(shtctl,task->console.sht,16,task->console.cur_y,COL8_FFFFFF, "free ");
     showString(shtctl,task->console.sht,52,task->console.cur_y, COL8_FFFFFF, s);
-    showString(shtctl, task->console.sht, 126, task->console.cur_y, COL8_FFFFFF, " KB");
+    showString(shtctl, task->console.sht, 86, task->console.cur_y, COL8_FFFFFF, " MB");
     task->console.cur_y = cons_newline(task->console.cur_y, task->console.sht);
 }
 
@@ -776,22 +791,69 @@ void cmd_execute_program(char* file) {
 
     file_loadfile(file, appBuffer);
     struct SEGMENT_DESCRIPTOR *gdt =(struct SEGMENT_DESCRIPTOR *)get_addr_gdt();
-    //select is multiply of 8, divided by 8 get the original value
-    int code_seg = 21 + (task->sel - first_task_cons_selector) / 8;
-    int mem_seg = 30 + (task->sel - first_task_cons_selector) / 8;//22;
-    set_segmdesc(task->ldt + 0, 0xfffff, (int) appBuffer->pBuffer, 0x409a + 0x60);
-    //new memory 
+    
+	set_segmdesc(gdt+21, 0xfffff, (int) appBuffer->pBuffer, 0x409a + 0x60);    //new memory 
     char *q = (char *) memman_alloc_4k(memman, 64*1024);
     appBuffer->pDataSeg = (unsigned char*)q;
 //    char *pp = intToHexStr(q);
  //   showString(shtctl, sht_back, 0, 0,COL8_FFFFFF, pp);
 
 
-    set_segmdesc(task->ldt + 1, 0xfffff, (int) q, 0x4092 + 0x60);
-
+    set_segmdesc(gdt+22, 0xfffff, (int) q, 0x4092 + 0x60);
     task->tss.esp0 = 0;
     io_sti();
-    start_app(0, 0*8+4,64*1024, 1*8+4, &(task->tss.esp0));
+    start_app(0, 21*8,64*1024, 22*8, &(task->tss.esp0));
+    io_cli();
+    //change here
+    /*
+    close any file handles
+    */
+    int i = 0;
+    for (i = 0; i < 8; i++) {
+        if (task->fhandle[i].buf != 0) {
+            memman_free_4k(memman, (unsigned int)task->fhandle[i].buf, task->fhandle[i].size);
+            task->fhandle[i].buf = 0;
+        }
+    }
+    memman_free_4k(memman,(unsigned int) appBuffer->pBuffer, appBuffer->length);
+    memman_free_4k(memman, (unsigned int) q, 64 * 1024);
+    memman_free(memman,(unsigned int)appBuffer, 16);
+    task->pTaskBuffer = 0;
+    io_sti();
+    
+}
+void cmd_ls()
+{
+  struct TASK *task = task_now();
+
+    struct FILEINFO *finfo = (struct FILEINFO*)(ADR_DISKIMG);
+    for (int i = 0; i < now_pos; i++)
+    {
+    if (catalogue[i] == now)
+    {
+      showString(shtctl, task->console.sht, 16, task->console.cur_y, COL8_FFFFFF, f[i].name);
+      task->console.cur_y = cons_newline(task->console.cur_y, task->console.sht);
+      finfo++;
+    }
+    }
+}
+void cmd_execute_program2(char* file) {
+    io_cli();
+    struct Buffer *appBuffer = (struct Buffer*)memman_alloc(memman, 16);
+    struct TASK *task = task_now();
+    task->pTaskBuffer = appBuffer;
+
+    file_loadfile(file, appBuffer);
+    struct SEGMENT_DESCRIPTOR *gdt =(struct SEGMENT_DESCRIPTOR *)get_addr_gdt();
+    //select is multiply of 8, divided by 8 get the original value
+    set_segmdesc(gdt+23, 0xfffff, (int) appBuffer->pBuffer, 0x409a + 0x60);
+    //new memory 
+    char *q = (char *) memman_alloc_4k(memman, 64*1024);
+    appBuffer->pDataSeg = (unsigned char*)q;
+    set_segmdesc(gdt+24, 0xfffff, (int) q, 0x4092 + 0x60);
+    task->tss.esp0 = 0;
+    io_sti();
+    start_app(0, 23*8,64*1024, 24*8, &(task->tss.esp0));
     io_cli();
     //change here
     /*
@@ -876,7 +938,21 @@ void console_task(struct SHEET *sheet, int memtotal) {
 
     struct FILEINFO* finfo = (struct FILEINFO*)(ADR_DISKIMG);
     int hlt = 0;
-
+    for (int i = 0; i < 50; i++)
+	{
+		catalogue[i] = -2;
+	}
+  newFile("n1 abc.txt");
+  newFile("n1 abc.exe");
+  newFile("n1 hlt.bat");
+  newFilefolder("n2 a");
+  newFilefolder("n2 b");
+  cd("cd a");
+  newFile("n1 a.txt");
+  back();
+  cd("cd b");
+  newFile("n1 b.txt");
+  back();
     for(;;) { 
         io_cli();
 
@@ -943,8 +1019,23 @@ void console_task(struct SHEET *sheet, int memtotal) {
                 else if (strcmp(cmdline, "ncst") == 1) {
                    cmd_ncst(scanCodeBuf);
                 }//change here
-                else if (strcmp(cmdline, "crack") == 1) {
+                else if (strcmp(cmdline, "hhh") == 1) {
                    cmd_execute_program("crack.exe");
+                }
+                else if (strcmp(cmdline, "back") == 1) {
+                   back();
+                }
+                else if (strcmp(cmdline, "ls") == 1) {
+                   cmd_ls();
+                }
+                else if (cmdline[0] == 'n' && cmdline[1] == '1') {
+                   newFile(cmdline);
+                }
+                else if (cmdline[0] == 'n' && cmdline[1] == '2') {
+                   newFilefolder(cmdline);
+                }
+                else if (cmdline[0] == 'c' && cmdline[1] == 'd') {
+                   cd(cmdline);
                 }
                 else if (strcmp(cmdline, "process") == 1) {
                   cmd_process();
@@ -1296,22 +1387,12 @@ int cons_newline(int cursor_y, struct SHEET *sheet) {
 }
 
 void init_screen8(char* vram, int xsize, int ysize) {
-    boxfill8(vram, xsize, COL8_008484, 0, 0, xsize-1, ysize-29);
+    boxfill8(vram, xsize, COL8_000000, 0, 0, xsize-1, ysize-29);
     boxfill8(vram, xsize, COL8_C6C6C6, 0, ysize-28, xsize-1, ysize-28);
     boxfill8(vram, xsize, COL8_FFFFFF, 0, ysize-27, xsize-1, ysize-27);
     boxfill8(vram, xsize, COL8_C6C6C6, 0, ysize-26, xsize-1, ysize-1);
 
-    boxfill8(vram, xsize, COL8_FFFFFF, 3, ysize-24, 59, ysize-24);
-    boxfill8(vram, xsize, COL8_FFFFFF, 2, ysize-24, 2, ysize-4);
-    boxfill8(vram, xsize, COL8_848484, 3, ysize-4,  59, ysize-4);
-    boxfill8(vram, xsize, COL8_848484, 59, ysize-23, 59, ysize-5);
-    boxfill8(vram, xsize, COL8_000000, 2, ysize-3, 59, ysize-3);
-    boxfill8(vram, xsize, COL8_000000, 60, ysize-24, 60, ysize-3);
-
-    boxfill8(vram, xsize, COL8_848484, xsize-47, ysize-24, xsize-4, ysize-24);
-    boxfill8(vram, xsize, COL8_848484, xsize-47, ysize-23, xsize-47, ysize-4);
-    boxfill8(vram, xsize, COL8_FFFFFF, xsize-47, ysize-3, xsize-4, ysize-3);
-    boxfill8(vram, xsize, COL8_FFFFFF, xsize-3,  ysize-24, xsize-3, ysize-3);
+    
 
 }
 
@@ -1512,22 +1593,22 @@ void showFont8(char *vram, int xsize, int x, int y, char c, char* font) {
 
 void init_mouse_cursor(char* mouse, char bc) {
     static char cursor[16][16] = {
-		"**************..",
-		"*OOOOOOOOOOO*...",
-		"*OOOOOOOOOO*....",
-		"*OOOOOOOOO*.....",
-		"*OOOOOOOO*......",
+		"***.............",
+		"*OO*............",
+		"*OOO*...........",
+		"*OOOO*..........",
+		"*OOOOO*.........",
+		"*OOOOOO*........",
 		"*OOOOOOO*.......",
-		"*OOOOOOO*.......",
 		"*OOOOOOOO*......",
-		"*OOOO**OOO*.....",
-		"*OOO*..*OOO*....",
-		"*OO*....*OOO*...",
-		"*O*......*OOO*..",
-		"**........*OOO*.",
-		"*..........*OOO*",
-		"............*OO*",
-		".............***"
+		"*OOOOOO**.......",
+		"*OOOOO*.........",
+		"*OO*OO*.........",
+		"*O*.*OO*........",
+		"**..*OOO........",
+		"*...****........",
+		"................",
+		"................"
 	};
 
       int x, y;
@@ -1630,6 +1711,31 @@ char* intToProcessStr(int d) {
   }
   return res;
 }
+char*  intToDecStr(unsigned int d) {
+    static char str[11];
+    str[0] = '0';
+    str[1] = '0';
+    str[10] = 0;
+
+    int i = 2;
+    for(; i < 10; i++) {
+        str[i] = '0';
+    }
+
+    int p = 9;
+    while (p > 1 && d > 0) {
+        int e = d % 10;
+        d /= 10;
+        str[p] = '0' + e;      
+        p--;
+    } 
+    for(i = 0; i < 9 - p; i++){
+        str[i] = str[i+p+1];
+    }
+    str[i] = 0;
+    return str;
+}
+
 #define  PORT_KEYDAT  0x0060
 #define  PORT_KEYSTA  0x0064
 #define  PORT_KEYCMD  0x0064
@@ -1938,3 +2044,110 @@ int* intHandlerForException(int *esp) {
     return &(task->tss.esp0);
 }
 
+void newFile(char* cmd)
+{
+  char fileName[8];
+  int k = 0;
+  for(k = 0;k < 8;k++)
+  {
+    if(cmd[k+3]==0)break;
+    fileName[k] = cmd[k+3];
+  }
+  fileName[k] = 0;
+  int i = 0;
+  for (i = 0; i < 8; i++)
+  {
+    if (fileName[i] != 0)
+    {
+      f[now_pos].name[i] = fileName[i];
+    }
+    else
+    {
+      break;
+    }
+  }
+  f[now_pos].name[i] = 0;
+  f[now_pos].type = 1;
+  f[now_pos].location = now_pos;
+  catalogue[now_pos] = now;
+  now_pos++;
+}
+void newFilefolder(char* cmd)
+{
+  char fileName[8];
+  int k = 0;
+  for(k = 0;k < 8;k++)
+  {
+    if(cmd[k+3]==0)break;
+    fileName[k] = cmd[k+3];
+  }
+  fileName[k] = 0;
+
+  int i = 0;
+  for (i = 0; i < 8; i++)
+  {
+    if (fileName[i] != 0)
+    {
+      f[now_pos].name[i] = fileName[i];
+    }
+    else
+    {
+      break;
+    }
+  }
+  f[now_pos].name[i] = 0;
+  f[now_pos].type = 0;
+  f[now_pos].location = now_pos;
+  catalogue[now_pos] = now;
+  now_pos++;
+}
+void cd(char* cmd)
+{
+  char fileName[8];
+  int k = 0;
+  for(k = 0;k < 8;k++)
+  {
+    if(cmd[k+3]==0)break;
+    fileName[k] = cmd[k+3];
+  }
+  fileName[k] = 0;
+
+  for (int i = 0; i < now_pos; i++)
+  {
+    if (catalogue[i] == now)
+    {
+      if (f[i].type == 0)
+      {
+        if (cmp(f[i].name, fileName))
+        {
+          now = f[i].location;
+          break;
+        }
+      }
+    }
+  }
+}
+void back()
+{
+  if (now != -1)
+  {
+    now = catalogue[now];
+  }
+}
+int cmp(char* f1, char* f2)
+{
+  int i = 0;
+  while ((f1[i] == 0) || (f2[i] == 0))
+  {
+    if (f1[i] != f2[i])
+    {
+      return 0;
+    }
+    i++;
+  }
+  if (f1[i] != f2[i])
+  {
+    return 0;
+  }
+  return 1;
+}
