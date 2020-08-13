@@ -209,6 +209,7 @@ static int catalogue[50];
 static struct fcb f[50];
 int now = -1;
 int now_pos = 0;
+static int time_count = 0;
 
 
 void CMain(void) {
@@ -316,7 +317,9 @@ void CMain(void) {
     int key_to = 0;
     int couser_c = COL8_000000;
     int last_console =0;
-    
+
+    showString(shtctl, shtMsgBox, 10, 50, COL8_000000, "count:");
+
     for(;;) {
 
      //  io_cli();
@@ -434,6 +437,10 @@ void CMain(void) {
            } else {
                set_cursor(shtctl, shtMsgBox, cursor_x, 28, COL8_FFFFFF);
            }
+           time_count++;
+           boxfill8(shtMsgBox->buf,shtMsgBox->bxsize, COL8_C6C6C6, 70, 50, 120, 70);
+           char *temp_str = IntToDecStr(time_count);
+           showString(shtctl, shtMsgBox, 70, 50, COL8_000000, temp_str);
       }
        
     } 
@@ -909,15 +916,20 @@ void calcu_task(struct SHEET *sheet)
                     if(cal_x > 8 && cal_x < 93 && cal_y > 240 && cal_y < 270)
                     {
                         expression[q] = 0;
-                        q = 0;
+                        int result = calculator(expression,memman);
+                        char * str = IntToDecStr(result);
                         boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
-                        //showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
-                        expression[0] = 0;
+                        showString(shtctl, sheet, 160, 40, COL8_FFFFFF,str);
+                        for(j = 0; j < 20; j++){
+                            expression[j] = 0;
+                        }
                         q = 0;
                     }
                     if(cal_x > 98 && cal_x < 183 && cal_y > 240 && cal_y < 270)
                     {
-                        expression[0] = 0;
+                        for(j = 0; j < 20; j++){
+                            expression[j] = 0;
+                        }
                         q = 0;
                         boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
                         //showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
@@ -2288,8 +2300,8 @@ struct SHEET*  message_box(struct SHTCTL *shtctl,  char *title) {
     unsigned char *buf_win;
     
     sht_win = sheet_alloc(shtctl);
-    buf_win = (unsigned char *)memman_alloc_4k(memman, 160 * 68);
-    sheet_setbuf(sht_win, buf_win, 160, 68, -1);
+    buf_win = (unsigned char *)memman_alloc_4k(memman, 160 * 75);
+    sheet_setbuf(sht_win, buf_win, 160, 75, -1);
 
     make_window8(shtctl, sht_win, title, 1);
     make_textbox8(sht_win, 8, 28, 144, 16, COL8_FFFFFF);    
