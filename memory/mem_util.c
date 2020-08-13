@@ -122,3 +122,327 @@ int memman_free_4k(struct MEMMAN *man, unsigned int addr, unsigned int size) {
     i = memman_free(man, addr, size);
     return i;
 }
+
+
+
+//初始化栈
+void initInt(IntStack * s){
+    s->first=0;
+}
+
+//判断栈中是不是为空
+int isEmptyInt(IntStack * s){
+    if(s->first == 0){
+        return 1;
+    } else{
+        return 0;
+    }
+}
+
+//加入一个元素
+int pushInt(IntStack * s, int v,struct MEMMAN * memman){
+ //   IntStackNode * ptr = (IntStackNode*) malloc(sizeof(IntStackNode));
+    IntStackNode* ptr = (IntStackNode*) memman_alloc(memman,16);
+    if(ptr==0){
+        return 0;
+    }
+    ptr->next=s->first;
+    ptr->value=v;
+    s->first=ptr;
+    return 1;
+}
+
+//删除一个元素,并返回栈顶的值,使用之前要保证不为空
+int popInt(IntStack * s ,struct MEMMAN * memman){
+    if(isEmptyInt(s)){
+        return 0;
+    }
+    int del = s->first->value;
+    IntStackNode * ptr = s->first;
+    s->first = ptr->next;
+    //free(ptr);
+    memman_free(memman,(unsigned int)ptr,16);
+    return del;
+}
+
+//查看栈顶的一个值，并不弹出,同时必须保证不为空
+int frontInt(IntStack * s){
+    if(isEmptyInt(s)){
+        return 0;
+    }
+    return s->first->value;
+}
+
+//清空整个stack
+void clearInt(IntStack * s ,struct MEMMAN * memman){
+    while (s->first != 0){
+        popInt(s,memman);
+    }
+}
+
+//初始化栈
+void initChar(CharStack * s){
+    s->first=0;
+}
+
+//判断栈中是不是为空
+int isEmptyChar(CharStack * s){
+    if(s->first == 0){
+        return 1;
+    } else{
+        return 0;
+    }
+}
+
+//加入一个元素
+int pushChar(CharStack * s, char v, struct MEMMAN * memman){
+    CharStackNode * ptr = (CharStackNode*) memman_alloc(memman,16);
+    if(ptr==0){
+        return 0;
+    }
+    ptr->next=s->first;
+    ptr->value=v;
+    s->first=ptr;
+    return 1;
+}
+
+//删除一个元素,并返回栈顶的值,使用之前要保证不为空
+char popChar(CharStack * s , struct MEMMAN * memman){
+    if(isEmptyChar(s)){
+        return 0;
+    }
+    char del = s->first->value;
+    CharStackNode * ptr = s->first;
+    s->first = ptr->next;
+    memman_free(memman,(unsigned int) ptr,16);
+    return del;
+}
+
+//查看栈顶的一个值，并不弹出,同时必须保证不为空
+char frontChar(CharStack * s){
+    if(isEmptyChar(s)){
+        return 0;
+    }
+    return s->first->value;
+}
+
+//清空整个stack
+void clearChar(CharStack * s , struct MEMMAN * memman){
+    while (s->first != 0){
+        popChar(s,memman);
+    }
+}
+
+
+int beforePriority(char op){
+    int priority=0;
+    if(op=='+' || op=='-'){
+        priority=2;
+    }else if (op=='*'||op=='/')
+    {
+        priority=4;
+    }else if (op=='(')
+    {
+        priority=8;
+    }else if (op==')')
+    {
+        priority=1;
+    }else if (op == '^')
+    {
+        priority = 7;
+    }else
+    {
+        priority = -1;
+    }
+    return priority;
+}
+
+
+int afterPriority(char op){
+    if(op == '+' || op == '-'){
+        return 3;
+    }else if (op == '*' || op == '/')
+    {
+        return 5;
+    }else if (op=='(')
+    {
+        return 1;
+    }else if (op == ')')
+    {
+        return 9;
+    }else if (op == '^')
+    {
+        return 6;
+    }else
+    {
+        return -1;
+    }
+}
+
+
+int getLength(const char * str){
+    int x = 0;
+    while (1){
+        if (str[x] != '\0'){
+            x++;
+        }else{
+            break;
+        }
+    }
+    return x;
+}
+int getData(char expression[] , int * beg){
+    int i =*beg;
+    int length = getLength(expression);
+    int num = 0;
+    int posOrNag=1;
+
+    //第一个数字特殊处理
+    if(expression[i] >= 48 && expression[i] <= 57){
+        num = expression[i]-'0';
+    }else if(expression[i] == '+'){
+        posOrNag = 1;
+    }else if(expression[i] == '-'){
+        posOrNag = 0;
+    }else{
+        return 0;
+    }
+    int j;
+    for (j = i+1; j < length; ++j) {
+        if(expression[j] >= 48 && expression[j] <= 57)
+        {
+            num *= 10;
+            num += (expression[j]-'0');
+        }else{
+            
+            break;
+        }
+    }
+    *beg = j-1;
+    if(posOrNag == 0){
+        num = 0 - num;
+    }
+
+    return num;
+}
+int result(IntStack * numStack,char op,struct MEMMAN * memman){
+    int first = popInt(numStack,memman);
+    int second = popInt(numStack,memman);
+    int ans=0;
+    if(op == '-'){
+        ans = second - first;
+    }else if (op == '+')
+    {
+        ans = first + second;
+    }else if(op == '*'){
+         ans = first * second;
+    }else if (op == '/')
+    {
+        ans = second/first;
+    }else if (op == '^')
+    {
+        ans = 1;
+        for (int i = 0; i < first; ++i) {
+            ans *= second;
+        }
+    }else
+    {
+        return 0;
+    }
+    
+    return pushInt(numStack,ans,memman);
+}
+int calculator(char expression[], struct MEMMAN * memman){
+
+    //查询字符数组的长度
+    int length = getLength(expression);
+
+    //创建数字栈
+    IntStack numStack;
+    initInt(&numStack);
+
+    //创建符号栈
+    CharStack  opStack;
+    initChar(&opStack);
+
+    int number = 0;
+    for (int i = 0; i < length; ++i) {
+        //处理单目运算符
+        if(i==0){
+            if(expression[0] == '-' || expression[0] == '+'){
+                number = getData(expression,&i);
+                pushInt(&numStack,number,memman);
+                continue;
+            }
+        }
+
+        if(expression[i]>=48 && expression[i]<=57){
+            number = getData(expression,&i); 
+            pushInt(&numStack,number,memman);
+        }else if(expression[i] == '+' || expression[i]=='-' || expression[i]=='*'
+            || expression[i]=='/' ||expression[i]=='^'){
+            if(isEmptyChar(&opStack)){
+                    pushChar(&opStack,expression[i],memman);
+                }else{
+                    int out = beforePriority(expression[i]);
+                    int in = afterPriority(frontChar(&opStack));
+                    if(out > in){
+                        pushChar(&opStack,expression[i],memman);
+                    }else{
+                        char op = popChar(&opStack,memman);
+                        int a = result(&numStack,op,memman);
+                        if(!a){
+//                            printf("C1 err\n");
+//                            exit(1);
+                        }
+                        pushChar(&opStack,expression[i],memman);
+                    }
+                }
+        }else if(expression[i]=='('){
+            pushChar(&opStack,expression[i],memman);
+                //
+                if(expression[i+1]=='+' || expression[i+1]=='-'){
+                    //同上可优化
+                    ++i;
+                    number = getData(expression,&i);
+                    pushInt(&numStack,number,memman);
+                }
+        }else if(expression[i]==')'){
+            while (frontChar(&opStack) != '('){
+                    char x = popChar(&opStack,memman);
+                    int a =result(&numStack,x,memman);
+                    if(!a){
+//                        printf("C2 err\n");
+//                        exit(2);
+                    }
+                }
+                popChar(&opStack,memman);
+        }
+
+    }
+
+    while (!isEmptyChar(&opStack)){
+        char op = popChar(&opStack,memman);
+        if(op!='+' && op!='-' && op!='*' && op!='/' && op!='^'){
+//            printf("C3 err\n");
+//            exit(3);
+        }
+        int a = result(&numStack,op,memman);
+        if(!a){
+//            printf("C4 err\n");
+//            exit(4);
+        }
+    }
+
+    int cal = popInt(&numStack,memman);
+    if(!isEmptyInt(&numStack)){
+//        printf("C5 err\n");
+//        exit(5);
+    }
+
+    clearChar(&opStack,memman);
+    clearInt(&numStack,memman);
+
+    return cal;
+
+}

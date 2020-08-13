@@ -90,7 +90,12 @@ public class OperatingSystem {
     	
     	header.setFileContent(bbuf);
     	fileSys.addHeader(header);
-    	    	
+		header = new FileHeader();
+		header.setFileName("abc");
+		header.setFileExt("txt");
+		String content = "this is a text file with name abc.txt";
+		header.setFileContent(content.getBytes());
+		fileSys.addHeader(header);
     	//change here
     	header = new FileHeader();
     	header.setFileName("crack");
@@ -116,12 +121,7 @@ public class OperatingSystem {
     	header.setFileContent(bbuf);
     	fileSys.addHeader(header);
     	
-    	header = new FileHeader();
-    	header.setFileName("ijk");
-    	header.setFileExt("txt");
-    	String content = "this is a text file with name ijk.txt";
-    	header.setFileContent(content.getBytes());
-    	fileSys.addHeader(header);
+
 
     	
     	fileSys.flashFileHeaders();
