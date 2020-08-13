@@ -73,28 +73,18 @@ void waitting(int i, int timer, char* keyflag) {
             break;
         }
 
+        // if (j == 0x17) 
+        //     keyflag[0] = 1;
         if (j == 0x24) 
             keyflag[0] = 1;
         if (j == 0x25)
             keyflag[1] = 1;
-        if (j == 0x26)
-            keyflag[2] = 1;
-        if (j == 0x2C)
-            keyflag[3] = 1;
-        if (j == 0x2D)
-            keyflag[4] = 1;
-        if (j == 0x2E)
-            keyflag[5] = 1;
-        if (j == 0x2F)
-            keyflag[6] = 1;
-        if (j == 0x30)
-            keyflag[7] = 1;
-        if (j == 0x31)
-            keyflag[8] = 1;
+        // if (j == 0x26)
+        //     keyflag[3] = 1;
         if (j == 0x1C) 
-            keyflag[9] = 1;
+            keyflag[2] = 1;
         if (j == 0x39) 
-            keyflag[10] = 1;
+            keyflag[3] = 1;
     
         // j = api_getkey(1);
         // if (j == 0x10)//key q
@@ -185,8 +175,8 @@ void main() {
         //     turn++;
         // }
         // if(turn%2==0){
-        for(i=0;i<9;i++){
-            if (keyflag[i] != 0) {
+        // for(i=0;i<9;i++){
+            if (keyflag[0] != 0&&gezi>0) {
                 int a=gezi_toX(gezi);
                 int b=gezi_toY(gezi);
                 if(gezi%2==0){
@@ -204,17 +194,89 @@ void main() {
                         api_boxfilwin(win, a-10, b-10, a+10, b+10, 3);//o
                     }
                 }
-                gezi=i;
+                gezi=gezi-1;
                 a=gezi_toX(gezi);
                 b=gezi_toY(gezi);
                 api_boxfilwin(win,a-gezisize,b-gezisize,a+gezisize,b+gezisize,5);
                 api_refreshwin(win,  0, 0, win_width-1, win_height-1);
-                keyflag[i] =0;
-            }
-        }
-        if (keyflag[9]!=0)
+                keyflag[0] =0;
+            }else if(keyflag[1]!=0&&gezi<8){
+                int a=gezi_toX(gezi);
+                int b=gezi_toY(gezi);
+                if(gezi%2==0){
+                    api_boxfilwin(win,a-gezisize,b-gezisize,a+gezisize,b+gezisize,0);
+                    if(who[gezi]=='x'){
+                        api_boxfilwin(win, a-10, b-10, a+10, b+10, 6);
+                    }else if(who[gezi]=='o'){
+                        api_boxfilwin(win, a-10, b-10, a+10, b+10, 3);
+                    }
+                }else{
+                    api_boxfilwin(win,a-gezisize,b-gezisize,a+gezisize,b+gezisize,4);
+                    if(who[gezi]=='x'){
+                        api_boxfilwin(win, a-10, b-10, a+10, b+10, 6);//x
+                    }else if(who[gezi]=='o'){
+                        api_boxfilwin(win, a-10, b-10, a+10, b+10, 3);//o
+                    }
+                }
+                gezi=gezi+1;
+                a=gezi_toX(gezi);
+                b=gezi_toY(gezi);
+                api_boxfilwin(win,a-gezisize,b-gezisize,a+gezisize,b+gezisize,5);
+                api_refreshwin(win,  0, 0, win_width-1, win_height-1);
+                keyflag[1] =0;}
+            // }else if(keyflag[2]!=0&&gezi>0){
+            //     int a=gezi_toX(gezi);
+            //     int b=gezi_toY(gezi);
+            //     if(gezi%2==0){
+            //         api_boxfilwin(win,a-gezisize,b-gezisize,a+gezisize,b+gezisize,0);
+            //         if(who[gezi]=='x'){
+            //             api_boxfilwin(win, a-10, b-10, a+10, b+10, 6);
+            //         }else if(who[gezi]=='o'){
+            //             api_boxfilwin(win, a-10, b-10, a+10, b+10, 3);
+            //         }
+            //     }else{
+            //         api_boxfilwin(win,a-gezisize,b-gezisize,a+gezisize,b+gezisize,4);
+            //         if(who[gezi]=='x'){
+            //             api_boxfilwin(win, a-10, b-10, a+10, b+10, 6);//x
+            //         }else if(who[gezi]=='o'){
+            //             api_boxfilwin(win, a-10, b-10, a+10, b+10, 3);//o
+            //         }
+            //     }
+            //     gezi=gezi-1;
+            //     a=gezi_toX(gezi);
+            //     b=gezi_toY(gezi);
+            //     api_boxfilwin(win,a-gezisize,b-gezisize,a+gezisize,b+gezisize,5);
+            //     api_refreshwin(win,  0, 0, win_width-1, win_height-1);
+            //     keyflag[2] =0;
+            // }else if(keyflag[3]!=0&&gezi<8){
+            //     int a=gezi_toX(gezi);
+            //     int b=gezi_toY(gezi);
+            //     if(gezi%2==0){
+            //         api_boxfilwin(win,a-gezisize,b-gezisize,a+gezisize,b+gezisize,0);
+            //         if(who[gezi]=='x'){
+            //             api_boxfilwin(win, a-10, b-10, a+10, b+10, 6);
+            //         }else if(who[gezi]=='o'){
+            //             api_boxfilwin(win, a-10, b-10, a+10, b+10, 3);
+            //         }
+            //     }else{
+            //         api_boxfilwin(win,a-gezisize,b-gezisize,a+gezisize,b+gezisize,4);
+            //         if(who[gezi]=='x'){
+            //             api_boxfilwin(win, a-10, b-10, a+10, b+10, 6);//x
+            //         }else if(who[gezi]=='o'){
+            //             api_boxfilwin(win, a-10, b-10, a+10, b+10, 3);//o
+            //         }
+            //     }
+            //     gezi=gezi+1;
+            //     a=gezi_toX(gezi);
+            //     b=gezi_toY(gezi);
+            //     api_boxfilwin(win,a-gezisize,b-gezisize,a+gezisize,b+gezisize,5);
+            //     api_refreshwin(win,  0, 0, win_width-1, win_height-1);
+            //     keyflag[3] =0;
+            // }
+        // }
+        if (keyflag[2]!=0)
             break;
-        if(keyflag[10]!=0&&who[gezi]=='#'){
+        if(keyflag[3]!=0&&who[gezi]=='#'){
             if(turn%2==0){
                 int a=gezi_toX(gezi);
                 int b=gezi_toY(gezi);
@@ -222,7 +284,7 @@ void main() {
                 // api_putstrwin(win,a,b,7,1,sa);
                 api_boxfilwin(win, a-10, b-10, a+10, b+10, 6);
                 who[gezi]='x';
-                keyflag[10]=0;
+                keyflag[3]=0;
                 turn++;
             }else{
                 int a=gezi_toX(gezi);
@@ -231,26 +293,26 @@ void main() {
                 // api_putstrwin(win,a,b,7,1,sa);
                 api_boxfilwin(win, a-10, b-10, a+10, b+10, 3);
                 who[gezi]='o';
-                keyflag[10]=0;
+                keyflag[3]=0;
                 turn++;
             } 
         }
     }
     
     if(winner==1){
-        api_boxfilwin(win,10,10,90,90,7);
+        // api_boxfilwin(win,10,10,90,90,7);
         char winner[12] = {'G','A','M','E','W','I','N','N','E','R','A'};
         api_putstrwin(win, 100, 100, 1,11, winner);
         waitting(100, timer, keyflag);
     }else if(winner==2){
-        api_boxfilwin(win,10,10,90,90,7);
+        // api_boxfilwin(win,10,10,90,90,7);
         char winner[12] = {'G','A','M','E','W','I','N','N','E','R','B'};
         api_putstrwin(win, 100, 100, 1,11, winner);
         waitting(100, timer, keyflag);
     }
     for(;;){
         waitting(4, timer, keyflag);
-        if(keyflag[9]!=0){
+        if(keyflag[2]!=0){
             break;
         }
     }
