@@ -27,6 +27,7 @@
 //change here
 void load_ldt(short s);
 
+struct SHEET* gui_calculator(int i);
 void cmd_dir();
 void asm_end_app(int*);
 void kill_process();
@@ -167,6 +168,7 @@ void  set_cursor(struct SHTCTL *shtctl, struct SHEET *sheet, int cur_x, int cur_
 struct SHEET *launch_console(int i);
 void console_task(struct SHEET *sheet, int memtotal); 
 
+void calcu_task(struct SHEET *sheet);
 void make_wtitle8(struct SHTCTL *shtctl, struct SHEET *sht,char *title, char act);
 
 //static struct TASK *task_cons[2];
@@ -561,6 +563,364 @@ struct SHEET*  launch_console(int i) {
     return sht_cons;
 }
 
+struct SHEET* gui_calculator(int i)
+{
+    struct SHEET *sht_calcu = 0;
+    sht_calcu = sheet_alloc(shtctl);
+    unsigned char *buf_calcu = (unsigned char *)memman_alloc_4k(memman, 200*320);
+    sheet_setbuf(sht_calcu, buf_calcu, 200, 320, COLOR_INVISIBLE);
+   
+    if (i > 0) {
+        make_window8(shtctl, sht_calcu, "calculator", 1);
+    } else {
+        make_window8(shtctl, sht_calcu, "calculator", 0);
+    }
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_000000, 8, 30, 190, 60);
+    //9
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 8, 80, 48, 80);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 8, 80, 8, 110);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 8, 110, 48, 110);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 48, 80, 48, 110);
+    showString(shtctl, sht_calcu, 24, 87, COL8_000000, "9");
+    //8
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 53, 80, 93, 80);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 53, 80, 53, 110);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 53, 110, 93, 110);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 93, 80, 93, 110);
+    showString(shtctl, sht_calcu, 69, 87, COL8_000000, "8");
+    //7
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 98, 80, 138, 80);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 98, 80, 98, 110);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 98, 110, 138, 110);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 138, 80, 138, 110);
+    showString(shtctl, sht_calcu, 114, 87, COL8_000000, "7");
+    //+
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 143, 80, 183, 80);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 143, 80, 143, 110);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 143, 110, 183, 110);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 183, 80, 183, 110);
+    showString(shtctl, sht_calcu, 159, 87, COL8_000000, "+");
+    //6
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 8, 120, 48, 120);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 8, 120, 8, 150);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 8, 150, 48, 150);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 48, 120, 48, 150);
+    showString(shtctl, sht_calcu, 24, 127, COL8_000000, "6");
+    //5
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 53, 120, 93, 120);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 53, 120, 53, 150);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 53, 150, 93, 150);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 93, 120, 93, 150);
+    showString(shtctl, sht_calcu, 69, 127, COL8_000000, "5");
+    //4
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 98, 120, 138, 120);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 98, 120, 98, 150);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 98, 150, 138, 150);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 138, 120, 138, 150);
+    showString(shtctl, sht_calcu, 114, 127, COL8_000000, "4");
+    //-
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 143, 120, 183, 120);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 143, 120, 143, 150);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 143, 150, 183, 150);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 183, 120, 183, 150);
+    showString(shtctl, sht_calcu, 159, 127, COL8_000000, "-");
+    //3
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 8, 160, 48, 160);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 8, 160, 8, 190);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 8, 190, 48, 190);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 48, 160, 48, 190);
+    showString(shtctl, sht_calcu, 24, 167, COL8_000000, "3");
+    //2
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 53, 160, 93, 160);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 53, 160, 53, 190);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 53, 190, 93, 190);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 93, 160, 93, 190);
+    showString(shtctl, sht_calcu, 69, 167, COL8_000000, "2");
+    //1
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 98, 160, 138, 160);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 98, 160, 98, 190);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 98, 190, 138, 190);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 138, 160, 138, 190);
+    showString(shtctl, sht_calcu, 114, 167, COL8_000000, "1");
+    //*
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 143, 160, 183, 160);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 143, 160, 143, 190);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 143, 190, 183, 190);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 183, 160, 183, 190);
+    showString(shtctl, sht_calcu, 159, 167, COL8_000000, "*");
+    //(
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 8, 200, 48, 200);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 8, 200, 8, 230);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 8, 230, 48, 230);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 48, 200, 48, 230);
+    showString(shtctl, sht_calcu, 24, 207, COL8_000000, "(");
+    //0
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 53, 200, 93, 200);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 53, 200, 53, 230);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 53, 230, 93, 230);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 93, 200, 93, 230);
+    showString(shtctl, sht_calcu, 69, 207, COL8_000000, "0");
+    //)
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 98, 200, 138, 200);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 98, 200, 98, 230);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 98, 230, 138, 230);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 138, 200, 138, 230);
+    showString(shtctl, sht_calcu, 114, 207, COL8_000000, ")");
+    ///
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 143, 200, 183, 200);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 143, 200, 143, 230);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 143, 230, 183, 230);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 183, 200, 183, 230);
+    showString(shtctl, sht_calcu, 159, 207, COL8_000000, "/");
+    //=
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 8, 240, 93, 240);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 8, 240, 8, 270);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 8, 270, 93, 270);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 93, 240, 93, 270);
+    showString(shtctl, sht_calcu, 50, 247, COL8_000000, "=");
+    //AC
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 98, 240, 183, 240);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 98, 240, 98, 270);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 98, 270, 183, 270);
+    boxfill8(sht_calcu->buf, sht_calcu->bxsize, COL8_848484, 183, 240, 183, 270);
+    showString(shtctl, sht_calcu, 140, 247, COL8_000000, "AC");
+
+    sheet_refresh(shtctl, sht_calcu, 0, 0, sht_calcu->bxsize, sht_calcu->bysize);
+
+    struct TASK *task_calcu = task_alloc();
+
+    task_calcu->sht = sht_calcu;
+    sht_calcu->task = task_calcu;
+    
+    int addr_code32 = get_code32_addr();
+    task_calcu->tss.eip =  (int)(calcu_task - addr_code32);
+
+    task_calcu->tss.es = 0;
+    task_calcu->tss.cs = 1*8;//6 * 8;
+    task_calcu->tss.ss = 4*8;
+    task_calcu->tss.ds = 3*8;
+    task_calcu->tss.fs = 0;
+    task_calcu->tss.gs = 2*8;
+    task_calcu->cons_stack = memman_alloc_4k(memman, 64 * 1024) ;
+    task_calcu->tss.esp = task_calcu->cons_stack +  64 * 1024 - 12;// 8;
+    
+    *((int*)(task_calcu->tss.esp + 4)) = (int)sht_calcu;
+
+    char *fifobuf = (char *)memman_alloc(memman, 128);
+    fifo8_init(&task_calcu->fifo, 128, fifobuf, task_calcu);
+    
+    task_run(task_calcu,1, 5);
+    
+    if (i == 0) {
+        first_task_cons_selector = task_calcu->sel;
+    }
+
+    return sht_calcu;
+}
+
+void calcu_task(struct SHEET *sheet)
+{
+    struct TIMER *timer;
+    struct TASK *task = task_now();
+    int i, j;
+
+    int x = 0, y = 0;
+    char *cmdline = (char *)memman_alloc(memman, 30);
+    char scanCodeBuf[32];
+    int pos = 96;
+    int pos1 = 176;
+
+
+    timer = timer_alloc();
+    timer_init(timer, &task->fifo, 1);
+    timer_settime(timer, 50);
+    task->console.timer = timer;
+    task->console.cmdline = cmdline;
+
+
+
+    struct FILEINFO* finfo = (struct FILEINFO*)(ADR_DISKIMG);
+    int hlt = 0;
+    int hor_x = 8;
+    char expression[20];
+    int p, q; //运算符指针
+    p = 0;
+    q = 0;
+    for(j = 0; j < 20; j++){
+        expression[j] = 0;
+    }
+    for(;;) { 
+        io_cli();
+
+        task = task_now();
+        // 修改
+        if (fifo8_status(&mouseinfo) != 0) {
+          char*vram = buf_back;
+        unsigned char data = 0;
+        int j; 
+        struct SHEET *sht = 0;
+        int x, y;
+        
+        int cal_x, cal_y;
+        io_sti();
+        data = fifo8_get(&mouseinfo);
+        if (mouse_decode(&mdec, data) != 0) {
+            computeMousePosition(shtctl, sht_back, &mdec);
+        
+            sheet_slide(shtctl, sht_mouse, mx, my);
+            if ((mdec.btn & 0x01) != 0) { 
+                if (mmx < 0) {
+                    cal_x = mx - sheet->vx0;
+                    cal_y = my - sheet->vy0;
+                    if(cal_x > 8 && cal_x < 48 && cal_y > 80 && cal_y < 110)
+                    {
+                        expression[q] = '9';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                        
+                    }
+                    if(cal_x > 53 && cal_x < 93 && cal_y > 80 && cal_y < 110)
+                    {
+                        expression[q] = '8';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                        
+                    }
+                    if(cal_x > 98 && cal_x < 138 && cal_y > 80 && cal_y < 110)
+                    {
+                        expression[q] = '7';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                    }
+                    if(cal_x > 143 && cal_x < 183 && cal_y > 80 && cal_y < 110)
+                    {
+                        expression[q] = '+';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                    }
+                    if(cal_x > 8 && cal_x < 48 && cal_y > 120 && cal_y < 150)
+                    {
+                        expression[q] = '6';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                    }
+                    if(cal_x > 53 && cal_x < 93 && cal_y > 120 && cal_y < 150)
+                    {
+                        expression[q] = '5';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                    }
+                    if(cal_x > 98 && cal_x < 138 && cal_y > 120 && cal_y < 150)
+                    {
+                        expression[q] = '4';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                    }
+                    if(cal_x > 143 && cal_x < 183 && cal_y > 120 && cal_y < 150)
+                    {
+                        expression[q] = '-';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                    }
+                    if(cal_x > 8 && cal_x < 48 && cal_y > 160 && cal_y < 190)
+                    {
+                        expression[q] = '3';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                    }
+                    if(cal_x > 53 && cal_x < 93 && cal_y > 160 && cal_y < 190)
+                    {
+                        expression[q] = '2';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                    }
+                    if(cal_x > 98 && cal_x < 138 && cal_y > 160 && cal_y < 190)
+                    {
+                        expression[q] = '1';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                    }
+                    if(cal_x > 143 && cal_x < 183 && cal_y > 160 && cal_y < 190)
+                    {
+                        expression[q] = '*';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                    }
+                    if(cal_x > 8 && cal_x < 48 && cal_y > 200 && cal_y < 230)
+                    {
+                        expression[q] = '(';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                    }
+                    if(cal_x > 53 && cal_x < 93 && cal_y > 200 && cal_y < 230)
+                    {
+                        expression[q] = '0';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                    }
+                    if(cal_x > 98 && cal_x < 138 && cal_y > 200 && cal_y < 230)
+                    {
+                        expression[q] = ')';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                    }
+                    if(cal_x > 143 && cal_x < 183 && cal_y > 200 && cal_y < 230)
+                    {
+                        expression[q] = '/';
+                        q++;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                    }
+                    if(cal_x > 8 && cal_x < 93 && cal_y > 240 && cal_y < 270)
+                    {
+                        expression[q] = 0;
+                        q = 0;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        //showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                        expression[0] = 0;
+                        q = 0;
+                    }
+                    if(cal_x > 98 && cal_x < 183 && cal_y > 240 && cal_y < 270)
+                    {
+                        expression[0] = 0;
+                        q = 0;
+                        boxfill8(sheet->buf, sheet->bxsize, COL8_000000, 8, 30, 190, 60);
+                        //showString(shtctl, sheet, 185 - 8*(q+1), 40, COL8_FFFFFF,expression);
+                    }
+                } else {
+                    x = mx - mmx;
+                   y = my - mmy;
+                    sheet_slide(shtctl, mouse_clicked_sht, mouse_clicked_sht->vx0 + x, mouse_clicked_sht->vy0 + y);
+                    mmx = mx;
+                    mmy = my;
+                }  
+             } else {
+                mmx = -1;
+             // showString(shtctl, sht_back, 0, 207, COL8_FFFFFF, "set mmx to -1");
+            }
+        }
+        }
+
+    io_sti();
+  }
+}
+
+
 void kill_process() {
     struct TASK *task = task_now();
     cons_newline(task->console.cur_y, task->console.sht);
@@ -889,9 +1249,9 @@ void console_task(struct SHEET *sheet, int memtotal) {
 
         task = task_now();
         // 修改
-        /*if (fifo8_status(&mouseinfo) != 0) {
+        if (fifo8_status(&mouseinfo) != 0) {
           show_mouse_info(shtctl, sht_back, sht_mouse);
-        }*/
+        }
         if (fifo8_status(&task->fifo) == 0) {
             //task_sleep(task_cons);
             io_sti();
@@ -936,6 +1296,10 @@ void console_task(struct SHEET *sheet, int memtotal) {
                    cmd_execute_program("abc.exe");
                 } else if (strcmp(cmdline, "dir") == 1) {
                    cmd_dir();
+                } else if(strcmp(cmdline, "guicalcu") == 1) {
+                    struct SHEET* temp = gui_calculator(1);
+                    sheet_slide(shtctl, temp, 50, 50);
+                    sheet_updown(shtctl, temp, 1);
                 }
                 else if (strcmp(cmdline, "exit") == 1) {
                    cmd_exit(task);
@@ -1300,7 +1664,7 @@ int cons_newline(int cursor_y, struct SHEET *sheet) {
 }
 
 void init_screen8(char* vram, int xsize, int ysize) {
-    boxfill8(vram, xsize, COL8_000000, 0, 0, xsize-1, ysize-29);
+    boxfill8(vram, xsize, COL8_000084, 0, 0, xsize-1, ysize-29);
     boxfill8(vram, xsize, COL8_C6C6C6, 0, ysize-28, xsize-1, ysize-28);
     boxfill8(vram, xsize, COL8_FFFFFF, 0, ysize-27, xsize-1, ysize-27);
     boxfill8(vram, xsize, COL8_C6C6C6, 0, ysize-26, xsize-1, ysize-1);
